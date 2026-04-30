@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Выбор среды</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        /* Стили для модального окна */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        
+        .modal-content-large {
+            background: white;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            margin: 20px;
+        }
+        
+        .modal-header {
+            padding: 20px 25px;
+            border-bottom: 2px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #4a90e2, #357abd);
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+            font-size: 22px;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 32px;
+            color: white;
+            cursor: pointer;
+            padding: 0;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        
+        .modal-close:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .modal-body {
+            padding: 25px;
+        }
+        
+        .contact-info-banner {
+            display: flex;
+            gap: 15px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa, #e8f4fd);
+            border-left: 4px solid #4a90e2;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(74, 144, 226, 0.1);
+        }
+        
+        .contact-info-icon {
+            font-size: 32px;
+            flex-shrink: 0;
+        }
+        
+        .contact-info-text {
+            flex: 1;
+        }
+        
+        .contact-info-text strong {
+            display: block;
+            color: #2c3e50;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        
+        .contact-info-text p {
+            margin: 5px 0;
+            color: #555;
+            font-size: 14px;
+        }
+        
+        .contact-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .contact-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: #4a90e2;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 5px 10px;
+            background: white;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        
+        .contact-link:hover {
+            background: #4a90e2;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(74, 144, 226, 0.3);
+        }
+        
+        .template-info-block {
+            background: linear-gradient(135deg, #fff9e6, #fffaf0);
+            border: 2px solid #ffd700;
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.15);
+        }
+        
+        .template-info-header {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        
+        .template-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+        
+        .template-info-header strong {
+            display: block;
+            color: #2c3e50;
+            font-size: 15px;
+            margin-bottom: 5px;
+        }
+        
+        .template-info-header p {
+            margin: 0;
+            color: #666;
+            font-size: 13px;
+        }
+        
+        .templates-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .download-template-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #2c3e50;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+            border: 2px solid #ffd700;
+            align-self: flex-start;
+            box-shadow: 0 2px 4px rgba(255, 215, 0, 0.3);
+        }
+        
+        .template-btn-small {
+            width: 100%;
+            justify-content: flex-start;
+        }
+        
+        .download-template-btn:hover {
+            background: linear-gradient(135deg, #ffed4e, #ffd700);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.5);
+        }
+        
+        .download-icon {
+            font-size: 18px;
+            animation: bounce 2s infinite;
+        }
+        
+        .template-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .template-info strong {
+            font-size: 14px;
+        }
+        
+        .template-info small {
+            font-size: 12px;
+            color: #666;
+            font-weight: normal;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-5px);
+            }
+            60% {
+                transform: translateY(-3px);
+            }
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .required {
+            color: #e74c3c;
+        }
+        
+        .form-group input[type="text"],
+        .form-group input[type="tel"],
+        .form-group input[type="email"],
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #4a90e2;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            font-family: inherit;
+        }
+        
+        .file-upload-wrapper {
+            position: relative;
+        }
+        
+        .form-group input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .file-upload-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 20px;
+            border: 2px dashed #4a90e2;
+            border-radius: 8px;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .file-upload-label:hover {
+            background: #e8f4fd;
+            border-color: #357abd;
+        }
+        
+        .file-upload-icon {
+            font-size: 24px;
+        }
+        
+        .file-upload-text {
+            color: #4a90e2;
+            font-weight: 600;
+        }
+        
+        .file-name {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: #e8f4fd;
+            border-radius: 6px;
+            color: #357abd;
+            font-size: 13px;
+            display: none;
+        }
+        
+        .file-name.show {
+            display: block;
+        }
+        
+        .form-help {
+            display: block;
+            margin-top: 5px;
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #4a90e2, #357abd);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+        
+        /* === СТИЛИ ДЛЯ КАРТОЧЕК ВЫБОРА СРЕДЫ === */
+        .cards-container-medium {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .card-medium {
+            position: relative;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border: 2px solid #e0e0e0;
+            border-radius: 20px;
+            padding: 40px 30px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        .card-medium::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.05) 0%, rgba(53, 122, 189, 0.05) 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            border-radius: 18px;
+        }
+        
+        .card-medium:hover {
+            transform: translateY(-8px) scale(1.02);
+            border-color: #4a90e2;
+            box-shadow: 0 12px 35px rgba(74, 144, 226, 0.25);
+        }
+        
+        .card-medium:hover::before {
+            opacity: 1;
+        }
+        
+        .card-medium:active {
+            transform: translateY(-4px) scale(1.01);
+        }
+        
+        .card-icon-wrapper {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .card-icon {
+            position: relative;
+            font-size: 64px;
+            z-index: 2;
+            transition: all 0.4s ease;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+        }
+        
+        .card-medium:hover .card-icon {
+            transform: scale(1.15) rotate(5deg);
+            filter: drop-shadow(0 8px 16px rgba(74, 144, 226, 0.3));
+        }
+        
+        .card-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            opacity: 0;
+            transition: all 0.4s ease;
+            z-index: 1;
+        }
+        
+        .card-glow-gas {
+            background: radial-gradient(circle, rgba(74, 144, 226, 0.3) 0%, transparent 70%);
+        }
+        
+        .card-glow-liquid {
+            background: radial-gradient(circle, rgba(41, 128, 185, 0.3) 0%, transparent 70%);
+        }
+        
+        .card-medium:hover .card-glow {
+            opacity: 1;
+            width: 140px;
+            height: 140px;
+        }
+        
+        .card-content {
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .card-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 12px;
+            transition: color 0.3s ease;
+        }
+        
+        .card-medium:hover .card-title {
+            color: #4a90e2;
+        }
+        
+        .card-description {
+            font-size: 15px;
+            color: #6c757d;
+            line-height: 1.6;
+            transition: color 0.3s ease;
+        }
+        
+        .card-medium:hover .card-description {
+            color: #5a6c7d;
+        }
+        
+        .card-arrow {
+            position: absolute;
+            bottom: 20px;
+            right: 25px;
+            font-size: 28px;
+            color: #4a90e2;
+            opacity: 0;
+            transform: translateX(-10px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .card-medium:hover .card-arrow {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        /* Специфичные цвета для типов */
+        .card-medium[data-medium="gas"]:hover {
+            border-color: #4a90e2;
+        }
+        
+        .card-medium[data-medium="liquid"]:hover {
+            border-color: #2980b9;
+        }
+        
+        .card-medium[data-medium="liquid"]:hover .card-title {
+            color: #2980b9;
+        }
+        
+        .card-medium[data-medium="liquid"]:hover .card-arrow {
+            color: #2980b9;
+        }
+        
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .cards-container-medium {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .card-medium {
+                padding: 30px 20px;
+            }
+            
+            .card-icon-wrapper {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .card-icon {
+                font-size: 52px;
+            }
+            
+            .card-title {
+                font-size: 24px;
+            }
+            
+            .card-description {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="step-title">Шаг 2: Выбор среды</h1>
+        
+        <p class="step-description">
+            Выберите тип среды для работы оборудования. Для жидкости доступно только промышленное оборудование.
+        </p>
+        
+        <div class="cards-container-medium">
+            <div class="card card-medium" data-medium="gas">
+                <div class="card-icon-wrapper">
+                    <div class="card-icon card-icon-gas">
+                        🔥
+                    </div>
+                    <div class="card-glow card-glow-gas"></div>
+                </div>
+                <div class="card-content">
+                    <div class="card-title">Газ</div>
+                    <div class="card-description">Измерение расхода газовых сред</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </div>
+            
+            <div class="card card-medium" data-medium="liquid">
+                <div class="card-icon-wrapper">
+                    <div class="card-icon card-icon-liquid">
+                        💧
+                    </div>
+                    <div class="card-glow card-glow-liquid"></div>
+                </div>
+                <div class="card-content">
+                    <div class="card-title">Жидкость</div>
+                    <div class="card-description">Измерение расхода жидкостных сред</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </div>
+        </div>
+        
+        <div class="navigation-buttons" style="margin-top: 40px; display: flex; justify-content: space-between;">
+            <button id="back-btn-page" class="btn btn-secondary">← Назад</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно для поверочных установок -->
+    <div id="verification-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content-large">
+            <div class="modal-header">
+                <h2>Заявка на поверочные установки</h2>
+                <button class="modal-close" onclick="closeVerificationModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="contact-info-banner">
+                    <div class="contact-info-icon">💬</div>
+                    <div class="contact-info-text">
+                        <strong>Есть вопросы? Хотите получить консультацию?</strong>
+                        <p>Позвоните или напишите нам!</p>
+                        <div class="contact-details">
+                            <a href="tel:+78632037780" class="contact-link">📞 +7 (863) 203-77-80</a>
+                            <a href="mailto:info@turbo-don.ru" class="contact-link">✉️ info@turbo-don.ru</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <form id="verification-form" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="v-fullname">ФИО <span class="required">*</span></label>
+                        <input type="text" id="v-fullname" name="fullname" required placeholder="Иванов Иван Иванович">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="v-organization">Организация <span class="required">*</span></label>
+                        <input type="text" id="v-organization" name="organization" required placeholder="ООО 'Название компании'">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="v-position">Должность <span class="required">*</span></label>
+                        <input type="text" id="v-position" name="position" required placeholder="Инженер">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="v-phone">Телефон <span class="required">*</span></label>
+                        <input type="tel" id="v-phone" name="phone" required placeholder="+7 (999) 123-45-67">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="v-email">Email <span class="required">*</span></label>
+                        <input type="email" id="v-email" name="email" required placeholder="example@company.ru">
+                    </div>
+                    
+                    <!-- Блок с опросными листами -->
+                    <div class="form-group">
+                        <div class="template-info-block">
+                            <div class="template-info-header">
+                                <span class="template-icon">📋</span>
+                                <div>
+                                    <strong>Прикрепите свое ТЗ или заполните наш опросный лист</strong>
+                                    <p id="template-subtitle">Скачайте подходящий шаблон, заполните его и прикрепите ниже</p>
+                                </div>
+                            </div>
+                            <div id="templates-container" class="templates-list">
+                                <!-- Шаблоны будут добавлены через JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="v-tz-file">Техническое задание <span class="required">*</span></label>
+                        <div class="file-upload-wrapper">
+                            <input type="file" id="v-tz-file" name="tz_file" required accept=".pdf,.doc,.docx,.txt,.zip,.rar">
+                            <label for="v-tz-file" class="file-upload-label">
+                                <span class="file-upload-icon">📎</span>
+                                <span class="file-upload-text">Выберите файл или перетащите сюда</span>
+                            </label>
+                            <div class="file-name" id="v-file-name"></div>
+                        </div>
+                        <small class="form-help">Форматы: PDF, DOC, DOCX, TXT, ZIP, RAR (макс. 10 МБ)</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="v-comment">Комментарий (необязательно)</label>
+                        <textarea id="v-comment" name="comment" rows="4" placeholder="Дополнительная информация или пожелания"></textarea>
+                    </div>
+                    
+                    <input type="hidden" id="v-medium" name="medium" value="">
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeVerificationModal()">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Отправить заявку</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js?v=20250901113600"></script>
+    <script>
+        // Определяем тип оборудования из URL
+        const params = new URLSearchParams(window.location.search);
+        const equipmentType = params.get('equipment_type') || 'flowmeters';
+        
+        // Обработка клика по карточкам среды
+        document.addEventListener('click', (e) => {
+            const card = e.target.closest('.card[data-medium]');
+            if (!card) return;
+            
+            const medium = card.getAttribute('data-medium');
+            
+            // Если это поверочные установки - открываем модальное окно
+            if (equipmentType === 'verification') {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                openVerificationModal(medium);
+                return false;
+            } else {
+                // Для остальных типов оборудования - стандартный переход
+                if (medium === 'gas') {
+                    window.location.href = `/application?equipment_type=${encodeURIComponent(equipmentType)}&medium=gas`;
+                } else if (medium === 'liquid') {
+                    window.location.href = `/params?equipment_type=${encodeURIComponent(equipmentType)}&medium=liquid&application=industrial`;
+                }
+            }
+        }, true); // Используем фазу захвата (capture phase)
+        
+        // Открытие модального окна для поверочных установок
+        function openVerificationModal(medium) {
+            const modal = document.getElementById('verification-modal');
+            const mediumInput = document.getElementById('v-medium');
+            const templatesContainer = document.getElementById('templates-container');
+            const subtitle = document.getElementById('template-subtitle');
+            
+            mediumInput.value = medium;
+            
+            // Очищаем контейнер шаблонов
+            templatesContainer.innerHTML = '';
+            
+            // Определяем какие шаблоны показывать
+            if (medium === 'gas') {
+                subtitle.textContent = 'Скачайте подходящий шаблон для газовых установок';
+                
+                // Добавляем шаблоны для газа
+                const gasTemplates = [
+                    { name: 'spu3', title: 'СПУ-3', desc: 'Опросный лист для СПУ-3' },
+                    { name: 'spu5', title: 'СПУ-5', desc: 'Опросный лист для СПУ-5' },
+                    { name: 'spu7', title: 'СПУ-7', desc: 'Опросный лист для СПУ-7' }
+                ];
+                
+                gasTemplates.forEach(template => {
+                    const link = document.createElement('a');
+                    link.href = `/download/questionnaire/${template.name}`;
+                    link.className = 'download-template-btn template-btn-small';
+                    link.download = true;
+                    link.innerHTML = `
+                        <span class="download-icon">⬇️</span>
+                        <div class="template-info">
+                            <strong>${template.title}</strong>
+                            <small>${template.desc}</small>
+                        </div>
+                    `;
+                    templatesContainer.appendChild(link);
+                });
+            } else if (medium === 'liquid') {
+                subtitle.textContent = 'Скачайте шаблон для установок на жидкость';
+                
+                // Добавляем шаблон для жидкости
+                const link = document.createElement('a');
+                link.href = '/download/questionnaire/purs';
+                link.className = 'download-template-btn template-btn-small';
+                link.download = true;
+                link.innerHTML = `
+                    <span class="download-icon">⬇️</span>
+                    <div class="template-info">
+                        <strong>ПУРС</strong>
+                        <small>Опросный лист для установок на жидкость</small>
+                    </div>
+                `;
+                templatesContainer.appendChild(link);
+            }
+            
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        // Закрытие модального окна
+        function closeVerificationModal() {
+            const modal = document.getElementById('verification-modal');
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            document.getElementById('verification-form').reset();
+            document.getElementById('v-file-name').classList.remove('show');
+        }
+        
+        // Закрытие по клику вне модального окна
+        document.getElementById('verification-modal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeVerificationModal();
+            }
+        });
+        
+        // Показать имя выбранного файла
+        document.getElementById('v-tz-file')?.addEventListener('change', function(e) {
+            const fileName = e.target.files[0]?.name;
+            const fileNameDiv = document.getElementById('v-file-name');
+            if (fileName) {
+                fileNameDiv.textContent = '📄 ' + fileName;
+                fileNameDiv.classList.add('show');
+            } else {
+                fileNameDiv.classList.remove('show');
+            }
+        });
+        
+        // Обработка отправки формы
+        document.getElementById('verification-form')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            formData.append('equipment_type', 'verification');
+            
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Отправка...';
+            
+            try {
+                const response = await fetch('/api/submit-modular-request', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.status === 'success') {
+                    alert('✅ Заявка успешно отправлена!\n\nМы свяжемся с вами в ближайшее время.');
+                    closeVerificationModal();
+                } else {
+                    alert('❌ Ошибка при отправке заявки:\n' + (result.message || 'Неизвестная ошибка'));
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('❌ Произошла ошибка при отправке заявки.\nПожалуйста, попробуйте позже или свяжитесь с нами напрямую.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+        });
+        
+        // Кнопка "Назад"
+        document.getElementById('back-btn-page')?.addEventListener('click', () => {
+            window.location.href = '/';
+        });
+    </script>
+</body>
+</html>
+

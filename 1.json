@@ -1,0 +1,33 @@
+{
+  "id": 1,
+  "equipment_name": "Turbo Flow TFG-H",
+  "equipment_id": "tfgh1",
+  "model": "Turbo Flow TFG-H",
+  "created_at": "2025-09-03T11:19:07.500919",
+  "user_parameters": {
+    "medium": "gas",
+    "application": "industrial",
+    "gas_type": "natural",
+    "flow_range": {
+      "min": "150",
+      "max": "200"
+    },
+    "pressure_range": {
+      "min": "1",
+      "max": "1.6"
+    },
+    "temperature_range": {
+      "min": "-10",
+      "max": "10"
+    },
+    "ambient_temperature_range": {
+      "min": "-10",
+      "max": "10"
+    },
+    "diameter": "50",
+    "density_range": {
+      "min": "800",
+      "max": "1200"
+    }
+  }
+}

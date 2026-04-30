@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Подбор поверочных установок | Турбулентность Дон</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            color: #1e293b;
+            /* Многослойный градиент */
+            background:
+                /* Оранжевое свечение сверху-слева */
+                radial-gradient(ellipse at 20% 0%, rgba(255, 140, 50, 0.25) 0%, transparent 50%),
+                /* Оранжевое свечение снизу-справа */
+                radial-gradient(ellipse at 80% 100%, rgba(255, 120, 50, 0.2) 0%, transparent 50%),
+                /* Синее свечение по центру */
+                radial-gradient(ellipse at 50% 50%, rgba(30, 64, 175, 0.15) 0%, transparent 70%),
+                /* Основной градиент: тёмно-синий */
+                linear-gradient(160deg, #0f172a 0%, #1e3a5f 25%, #1e40af 50%, #1e3a5f 75%, #0f172a 100%);
+            background-attachment: fixed;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Header */
+        .header {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 30px auto 0;
+            padding: 25px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            box-shadow: 
+                0 4px 6px rgba(0, 0, 0, 0.05),
+                0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
+        }
+
+        .logo-icon svg {
+            width: 28px;
+            height: 28px;
+            fill: white;
+        }
+
+        .logo-text {
+            color: #0f172a;
+            line-height: 1.2;
+        }
+
+        .logo-text .main {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .logo-text .sub {
+            font-size: 10px;
+            font-weight: 500;
+            color: #64748b;
+            letter-spacing: 1px;
+        }
+
+        .header-title {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #1e40af 0%, #f97316 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .russia-badge {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .russia-text {
+            font-size: 9px;
+            font-weight: 500;
+            color: #64748b;
+            text-align: center;
+            line-height: 1.3;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .russia-flag {
+            width: 60px;
+            height: 40px;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .russia-flag .stripe {
+            height: 33.33%;
+        }
+
+        .russia-flag .white { background: #fff; }
+        .russia-flag .blue { background: #0039a6; }
+        .russia-flag .red { background: #d52b1e; }
+
+        /* Main content */
+        .main-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 25px 40px 40px;
+        }
+
+        /* Content wrapper */
+        .content-wrapper {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            box-shadow: 
+                0 4px 6px rgba(0, 0, 0, 0.05),
+                0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .tab {
+            padding: 14px 28px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 2px solid #e2e8f0;
+            color: #475569;
+        }
+
+        .tab:hover {
+            transform: translateY(-3px);
+            border-color: #1e40af;
+            color: #1e40af;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+            color: white;
+            border-color: #1e40af;
+            box-shadow: 0 4px 15px rgba(30, 64, 175, 0.4);
+        }
+
+        /* Content area */
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .card {
+            padding: 0;
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid;
+            border-image: linear-gradient(135deg, #1e40af, #f97316) 1;
+        }
+
+        /* Form elements */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #334155;
+            margin-bottom: 10px;
+        }
+
+        .param-number {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 3px 10px rgba(249, 115, 22, 0.3);
+            flex-shrink: 0;
+        }
+
+        .form-select,
+        .form-input {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #1e293b;
+            background: white;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            appearance: none;
+            cursor: pointer;
+        }
+
+        .form-select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23475569' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 18px center;
+            padding-right: 45px;
+        }
+
+        .form-select:hover,
+        .form-input:hover {
+            border-color: #1e40af;
+        }
+
+        .form-select:focus,
+        .form-input:focus {
+            outline: none;
+            border-color: #1e40af;
+            box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: #64748b;
+        }
+
+        /* Checkbox group */
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 16px;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .checkbox-item:hover:not(.disabled) {
+            border-color: #1e40af;
+            background: #f1f5f9;
+        }
+
+        .checkbox-item.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-top: 2px;
+            accent-color: #1e40af;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .checkbox-item input[type="checkbox"]:disabled {
+            cursor: not-allowed;
+        }
+
+        .checkbox-label {
+            font-size: 14px;
+            color: #334155;
+            line-height: 1.4;
+        }
+
+        /* Fixed accuracy value */
+        .accuracy-fixed {
+            padding: 14px 18px;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+        }
+
+        .accuracy-value {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1e40af;
+        }
+
+        .range-inputs {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .range-inputs .form-input {
+            flex: 1;
+        }
+
+        .range-separator {
+            color: #64748b;
+            font-weight: 500;
+            font-size: 18px;
+        }
+
+        /* Results card */
+        .results-card {
+            border-left: 4px solid #f97316;
+            padding-left: 25px;
+        }
+
+        .results-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 350px;
+            color: #64748b;
+            font-size: 15px;
+            font-style: italic;
+            text-align: center;
+        }
+
+        /* Buttons */
+        .buttons-row {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .submit-btn {
+            flex: 1;
+            padding: 16px 28px;
+            background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(30, 64, 175, 0.3);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(30, 64, 175, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .clear-btn {
+            flex: 1;
+            padding: 16px 28px;
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
+        }
+
+        .clear-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(249, 115, 22, 0.4);
+        }
+
+        .clear-btn:active {
+            transform: translateY(-1px);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+
+            .header-title {
+                font-size: 22px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .main-container {
+                padding: 15px;
+            }
+
+            .header {
+                margin: 15px;
+                padding: 20px;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .content-wrapper {
+                padding: 20px;
+            }
+
+            .buttons-row {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+            </div>
+            <div class="logo-text">
+                <div class="main">ТУРБУЛЕНТНОСТЬ ДОН</div>
+                <div class="sub">ГРУППА КОМПАНИЙ</div>
+            </div>
+        </div>
+        
+        <h1 class="header-title">Подбор поверочных установок</h1>
+        
+        <div class="russia-badge">
+            <div class="russia-text">Разработано и<br>произведено</div>
+            <div class="russia-flag">
+                <div class="stripe white"></div>
+                <div class="stripe blue"></div>
+                <div class="stripe red"></div>
+            </div>
+            <div class="russia-text" style="margin-top: 2px;">в России</div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <div class="content-wrapper">
+            <div class="tabs">
+                <button class="tab active">Подбор установок СПУ</button>
+            </div>
+
+            <div class="content">
+                <div class="card">
+                    <h2 class="card-title">Параметры</h2>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="param-number">1</span>
+                            Тип поверяемых счётчиков:
+                        </label>
+                        <select class="form-select" id="meterType">
+                            <option value="" disabled selected hidden>Выбрать тип счётчиков</option>
+                            <option value="domestic">Бытовые счётчики</option>
+                            <option value="industrial">Бытовые и промышленные счётчики</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="param-number">2</span>
+                            Тип установки:
+                        </label>
+                        <select class="form-select" id="installationType">
+                            <option value="" disabled selected hidden>Выбрать тип установки</option>
+                            <option value="stationary">Стационарная</option>
+                            <option value="portable" id="portableOption">Переносная</option>
+                        </select>
+                    </div>
+
+                    <div id="dynamicFields">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <span class="param-number">3</span>
+                                Дополнительные параметры:
+                            </label>
+                            <select class="form-select" disabled>
+                                <option value="" disabled selected hidden>Сначала выберите тип счётчиков и установки</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="buttons-row">
+                        <button class="submit-btn">Подобрать маску</button>
+                        <button class="clear-btn">Очистить форму</button>
+                    </div>
+                </div>
+
+                <div class="card results-card">
+                    <h2 class="card-title">Результаты подбора</h2>
+                    <div class="results-placeholder">
+                        <p>Выберите параметры и нажмите "Подобрать маску"</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Elements
+        const meterType = document.getElementById('meterType');
+        const installationType = document.getElementById('installationType');
+        const portableOption = document.getElementById('portableOption');
+        const dynamicFields = document.getElementById('dynamicFields');
+
+        // Meter type dependency
+        meterType.addEventListener('change', function() {
+            if (this.value === 'industrial') {
+                portableOption.disabled = true;
+                portableOption.style.color = '#9ca3af';
+                if (installationType.value === 'portable') {
+                    installationType.selectedIndex = 0;
+                }
+            } else {
+                portableOption.disabled = false;
+                portableOption.style.color = '';
+            }
+            updateDynamicFields();
+        });
+
+        installationType.addEventListener('change', updateDynamicFields);
+
+        function updateDynamicFields() {
+            const meter = meterType.value;
+            const installation = installationType.value;
+
+            if (meter === 'domestic' && installation === 'portable') {
+                renderDomesticPortable();
+            } else if (meter === 'domestic' && installation === 'stationary') {
+                renderDomesticStationary();
+            } else if (meter === 'industrial' && installation === 'stationary') {
+                renderIndustrialStationary();
+            } else {
+                renderEmpty();
+            }
+        }
+
+        function renderEmpty() {
+            dynamicFields.innerHTML = `
+                <div class="form-group">
+                    <label class="form-label">
+                        <span class="param-number">3</span>
+                        Дополнительные параметры:
+                    </label>
+                    <select class="form-select" disabled>
+                        <option value="" disabled selected hidden>Сначала выберите тип счётчиков и установки</option>
+                    </select>
+                </div>
+            `;
+        }
+
+        function renderDomesticPortable() {
+            dynamicFields.innerHTML = `
+                <div class="form-group">
+                    <label class="form-label">
+                        <span class="param-number">3</span>
+                        Диапазон воспроизводимых расходов, м³/ч:
+                    </label>
+                    <select class="form-select" id="flowRange">
+                        <option value="" disabled selected hidden>Выберите диапазон</option>
+                        <option value="0.016-16">от 0,016 до 16</option>
+                        <option value="0.25-25">от 0,25 до 25</option>
+                        <option value="0.04-40">от 0,04 до 40</option>
+                        <option value="0.1-100">от 0,1 до 100</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <span class="param-number">4</span>
+                        Верхний предел измерения давления, кПа:
+                    </label>
+                    <select class="form-select" id="pressureLimit">
+                        <option value="" disabled selected hidden>Выберите предел давления</option>
+                        <option value="10">10 кПа</option>
+                        <option value="1.6">1,6 кПа (спецзаказ)</option>
+                        <option value="2.5">2,5 кПа (спецзаказ)</option>
+                        <option value="4">4 кПа (спецзаказ)</option>
+                        <option value="16">16 кПа (спецзаказ)</option>
+                        <option value="25">25 кПа (спецзаказ)</option>
+                        <option value="40">40 кПа (спецзаказ)</option>
+                        <option value="60">60 кПа (спецзаказ)</option>
+                        <option value="100">100 кПа (спецзаказ)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <span class="param-number">5</span>
+                        Относительная погрешность, %:
+                    </label>
+                    <select class="form-select" id="accuracy">
+                        <option value="" disabled selected hidden>Выберите погрешность</option>
+                        <option value="0.3">±0,3% (спецзаказ)</option>
+                        <option value="0.45">±0,45% (спецзаказ)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <span class="param-number">6</span>
+                        Доп. комплектация:
+                    </label>
+                    <div class="checkbox-group" id="extraOptions">
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="psSensor">
+                            <span class="checkbox-label">Датчик перепада давления Turbo Flow PS</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="flowSetter1" name="flowSetter">
+                            <span class="checkbox-label">Задатчик расхода «переносной» от 0,016 до 25 м³/ч</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="flowSetter2" name="flowSetter">
+                            <span class="checkbox-label">Задатчик расхода «стационарный» от 0,016 до 40 м³/ч</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="flowSetter3" name="flowSetter">
+                            <span class="checkbox-label">Задатчик расхода от 0,04 до 100 м³/ч</span>
+                        </label>
+                    </div>
+                </div>
+            `;
+            initFlowSetterListeners();
+        }
+
+        function renderDomesticStationary() {
+            dynamicFields.innerHTML = `
+                <div class="form-group">
+                    <label class="form-label">
+                        <span class="param-number">3</span>
+                        Диапазон воспроизводимых расходов, м³/ч:
+                    </label>
+                    <select class="form-select" id="flowRange">
+                        <option value="" disabled selected hidden>Выберите диапазон</option>
+                        <option value="0.03-25">от 0,03 до 25</option>
+                        <option value="0.03-70">от 0,03 до 70</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <span class="param-number">4</span>
+                        Количество постов для счётчиков газа:
+                    </label>
+                    <select class="form-select" id="postsCount">
+                        <option value="" disabled selected hidden>Выберите количество постов</option>
+                        <option value="6">6 постов для счётчиков газа</option>
+                        <option value="10">10 постов для счётчиков газа</option>
+                        <option value="15">15 постов для счётчиков газа</option>
+                        <option value="23">23 поста для счётчиков газа</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <span class="param-number">5</span>
+                        Количество линий подключения счётчиков газа:
+                    </label>
+                    <select class="form-select" id="linesCount">
+                        <option value="" disabled selected hidden>Выберите количество линий</option>
+                        <option value="1">1 — одна линия подключения</option>
+                        <option value="3">3 — три линии подключения</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <span class="param-number">6</span>
+                        Относительная погрешность, %:
+                    </label>
+                    <div class="accuracy-fixed">
+                        <span class="accuracy-value">±0,3%</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function initFlowSetterListeners() {
+            const flowSetters = document.querySelectorAll('input[name="flowSetter"]');
+            flowSetters.forEach(setter => {
+                setter.addEventListener('change', function() {
+                    if (this.checked) {
+                        flowSetters.forEach(other => {
+                            if (other !== this) {
+                                other.checked = false;
+                                other.disabled = true;
+                                other.closest('.checkbox-item').classList.add('disabled');
+                            }
+                        });
+                    } else {
+                        flowSetters.forEach(other => {
+                            other.disabled = false;
+                            other.closest('.checkbox-item').classList.remove('disabled');
+                        });
+                    }
+                });
+            });
+        }
+
+        function renderIndustrialStationary() {
+            dynamicFields.innerHTML = `
+                <div class="form-group">
+                    <label class="form-label">
+                        <span class="param-number">3</span>
+                        Модификация:
+                    </label>
+                    <select class="form-select" id="modification">
+                        <option value="" disabled selected hidden>Выберите модификацию</option>
+                        <option value="nozzles">Сопла</option>
+                        <option value="masters">Мастер-счётчики</option>
+                    </select>
+                </div>
+
+                <div id="industrialDependentFields"></div>
+            `;
+
+            document.getElementById('modification').addEventListener('change', function() {
+                updateIndustrialFields(this.value);
+            });
+        }
+
+        function updateIndustrialFields(modification) {
+            const container = document.getElementById('industrialDependentFields');
+            
+            if (modification === 'nozzles') {
+                container.innerHTML = `
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="param-number">4</span>
+                            Диапазон воспроизводимых расходов, м³/ч:
+                        </label>
+                        <div class="accuracy-fixed">
+                            <span class="accuracy-value">от 0,016 до 1600</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="param-number">5</span>
+                            Относительная погрешность, %:
+                        </label>
+                        <select class="form-select" id="accuracy">
+                            <option value="" disabled selected hidden>Выберите погрешность</option>
+                            <option value="0.2">±0,2%</option>
+                            <option value="0.25">±0,25%</option>
+                            <option value="0.3">±0,3%</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="param-number">6</span>
+                            Диаметр, мм:
+                        </label>
+                        <select class="form-select" id="diameter">
+                            <option value="" disabled selected hidden>Выберите диаметр</option>
+                            <option value="15">15</option>
+                            <option value="20">20</option>
+                            <option value="25">25</option>
+                            <option value="32">32</option>
+                            <option value="40">40</option>
+                            <option value="50">50</option>
+                            <option value="80">80</option>
+                            <option value="100">100</option>
+                            <option value="150">150</option>
+                            <option value="200">200</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="param-number">7</span>
+                            Количество поверяемых средств измерений:
+                        </label>
+                        <div class="accuracy-fixed">
+                            <span class="accuracy-value">1 (один)</span>
+                        </div>
+                    </div>
+                `;
+            } else if (modification === 'masters') {
+                container.innerHTML = `
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="param-number">4</span>
+                            Диапазон воспроизводимых расходов, м³/ч:
+                        </label>
+                        <div class="accuracy-fixed">
+                            <span class="accuracy-value">от 0,016 до 5000</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="param-number">5</span>
+                            Относительная погрешность, %:
+                        </label>
+                        <div class="accuracy-fixed">
+                            <span class="accuracy-value">±0,33%</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="param-number">6</span>
+                            Диаметр, мм:
+                        </label>
+                        <select class="form-select" id="diameter">
+                            <option value="" disabled selected hidden>Выберите диаметр</option>
+                            <option value="15">15</option>
+                            <option value="20">20</option>
+                            <option value="25">25</option>
+                            <option value="32">32</option>
+                            <option value="40">40</option>
+                            <option value="50">50</option>
+                            <option value="80">80</option>
+                            <option value="100">100</option>
+                            <option value="150">150</option>
+                            <option value="200">200</option>
+                            <option value="250">250</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="param-number">7</span>
+                            Количество поверяемых средств измерений:
+                        </label>
+                        <div class="accuracy-fixed">
+                            <span class="accuracy-value">до 2 (двух)</span>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Form submission
+        document.querySelector('.submit-btn').addEventListener('click', function() {
+            const resultsArea = document.querySelector('.results-placeholder');
+            resultsArea.innerHTML = '<p>Поиск подходящих установок...</p>';
+            
+            setTimeout(() => {
+                resultsArea.innerHTML = `
+                    <div style="text-align: left; width: 100%; padding: 20px;">
+                        <p style="color: #0f172a; font-style: normal; margin-bottom: 15px; font-weight: 600;">
+                            Найдено установок: 3
+                        </p>
+                        <p style="color: #64748b; font-style: normal; font-size: 14px;">
+                            Для просмотра результатов заполните все поля формы
+                        </p>
+                    </div>
+                `;
+            }, 1000);
+        });
+
+        // Clear form
+        document.querySelector('.clear-btn').addEventListener('click', function() {
+            // Reset main selects
+            meterType.selectedIndex = 0;
+            installationType.selectedIndex = 0;
+            portableOption.disabled = false;
+            portableOption.style.color = '';
+            
+            // Reset dynamic fields
+            renderEmpty();
+            
+            document.querySelector('.results-placeholder').innerHTML = '<p>Выберите параметры и нажмите "Подобрать маску"</p>';
+        });
+    </script>
+</body>
+</html>

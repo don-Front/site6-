@@ -1,0 +1,1802 @@
+<!-- WordPress версия: Подбор ДД и ДТ -->
+<!-- Вставьте этот код в HTML-блок или режим "Код" страницы WordPress -->
+
+<style>
+/* === СТИЛИ ПРИЛОЖЕНИЯ === */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+.podbor-app * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.podbor-app {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: 
+        radial-gradient(ellipse at 20% 0%, rgba(255, 140, 50, 0.25) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 100%, rgba(255, 120, 50, 0.2) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(30, 64, 175, 0.15) 0%, transparent 70%),
+        linear-gradient(160deg, #0f172a 0%, #1e3a5f 25%, #1e40af 50%, #1e3a5f 75%, #0f172a 100%);
+    min-height: 100vh;
+    color: #333;
+    padding: 24px;
+    position: relative;
+}
+
+.podbor-app::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+}
+
+.podbor-app .container {
+    max-width: 1280px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+}
+
+.podbor-app header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    margin-bottom: 32px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
+    padding: 20px 40px;
+    border-radius: 20px;
+    box-shadow: 
+        0 4px 6px rgba(0, 0, 0, 0.05),
+        0 20px 40px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+}
+
+.podbor-app .header-logo {
+    width: auto;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.podbor-app .header-logo-left {
+    height: 55px;
+}
+
+.podbor-app .header-logo-right {
+    height: 70px;
+}
+
+.podbor-app header h1 {
+    color: #0f172a;
+    font-size: 2em;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #1e40af 0%, #f97316 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+    text-align: center;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.podbor-app .main-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.podbor-app .tabs {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
+    padding: 14px 18px;
+    border-radius: 16px;
+    box-shadow: 
+        0 4px 6px rgba(0, 0, 0, 0.05),
+        0 15px 35px rgba(0, 0, 0, 0.1);
+    margin-bottom: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+}
+
+.podbor-app .tab-list {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.podbor-app .tab {
+    border: 2px solid #e2e8f0;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    color: #475569;
+    padding: 12px 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 500;
+    font-size: 0.95em;
+}
+
+.podbor-app .tab:hover {
+    background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+    border-color: #f97316;
+    color: #ea580c;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.2);
+}
+
+.podbor-app .tab.active {
+    background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+    color: white;
+    border-color: #1e40af;
+    box-shadow: 0 4px 15px rgba(30, 64, 175, 0.4);
+}
+
+.podbor-app .tab-panel[hidden] {
+    display: none !important;
+}
+
+.podbor-app .form-section, 
+.podbor-app .results-section {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%);
+    padding: 28px;
+    border-radius: 20px;
+    box-shadow: 
+        0 4px 6px rgba(0, 0, 0, 0.05),
+        0 20px 40px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(10px);
+}
+
+.podbor-app .form-section h3, 
+.podbor-app .results-section h3 {
+    color: #0f172a;
+    margin-bottom: 24px;
+    font-size: 1.35em;
+    font-weight: 700;
+    padding-bottom: 12px;
+    border-bottom: 3px solid transparent;
+    background: linear-gradient(white, white) padding-box,
+                linear-gradient(135deg, #1e40af, #f97316) border-box;
+    border-bottom: 3px solid;
+    border-image: linear-gradient(135deg, #1e40af, #f97316) 1;
+}
+
+.podbor-app .form-group {
+    margin-bottom: 20px;
+}
+
+.podbor-app .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #334155;
+    font-size: 0.95em;
+}
+
+.podbor-app .form-group select,
+.podbor-app .form-group input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 14px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    color: #1e293b;
+    font-family: inherit;
+}
+
+.podbor-app .form-group select:focus,
+.podbor-app .form-group input:focus {
+    outline: none;
+    border-color: #1e40af;
+    box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.1);
+    background: white;
+}
+
+.podbor-app .form-group select:hover,
+.podbor-app .form-group input:hover {
+    border-color: #94a3b8;
+}
+
+.podbor-app .input-range {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.podbor-app .input-range input {
+    flex: 1;
+    padding: 14px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 14px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.podbor-app .range-separator {
+    color: #64748b;
+    font-weight: 600;
+    font-size: 18px;
+}
+
+.podbor-app .btn-primary, 
+.podbor-app .btn-secondary {
+    padding: 14px 28px;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-right: 12px;
+    margin-top: 12px;
+    font-family: inherit;
+}
+
+.podbor-app .btn-primary {
+    background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(30, 64, 175, 0.3);
+}
+
+.podbor-app .btn-primary:hover {
+    background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(30, 64, 175, 0.4);
+}
+
+.podbor-app .btn-secondary {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
+}
+
+.podbor-app .btn-secondary:hover {
+    background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(249, 115, 22, 0.4);
+}
+
+.podbor-app .results-section {
+    max-height: 650px;
+    overflow-y: auto;
+}
+
+.podbor-app .results-section::-webkit-scrollbar {
+    width: 8px;
+}
+
+.podbor-app .results-section::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+.podbor-app .results-section::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #1e40af, #f97316);
+    border-radius: 4px;
+}
+
+.podbor-app .sensor-card {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.podbor-app .sensor-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, #1e40af 0%, #f97316 100%);
+    border-radius: 4px 0 0 4px;
+}
+
+.podbor-app .sensor-card:hover {
+    transform: translateY(-4px) translateX(2px);
+    box-shadow: 0 12px 30px rgba(30, 64, 175, 0.15);
+    border-color: #1e40af;
+}
+
+.podbor-app .sensor-model {
+    font-size: 1.15em;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 12px;
+    padding-left: 8px;
+}
+
+.podbor-app .sensor-specs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    font-size: 0.9em;
+    color: #475569;
+    padding-left: 8px;
+}
+
+.podbor-app .spec-item {
+    padding: 6px 0;
+}
+
+.podbor-app .spec-label {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.podbor-app .mask-section {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%);
+    padding: 32px;
+    border-radius: 20px;
+    box-shadow: 
+        0 4px 6px rgba(0, 0, 0, 0.05),
+        0 20px 40px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    margin-top: 24px;
+    grid-column: 1 / -1;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(10px);
+}
+
+.podbor-app .mask-section h3 {
+    color: #0f172a;
+    margin-bottom: 24px;
+    font-size: 1.35em;
+    font-weight: 700;
+    padding-bottom: 12px;
+    border-bottom: 3px solid;
+    border-image: linear-gradient(135deg, #f97316, #1e40af) 1;
+}
+
+.podbor-app .mask-display {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1e40af 100%);
+    color: white;
+    padding: 28px;
+    border-radius: 16px;
+    margin-bottom: 24px;
+    box-shadow: 
+        0 10px 30px rgba(15, 23, 42, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.podbor-app .mask-display::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 150px;
+    height: 150px;
+    background: radial-gradient(circle, rgba(249, 115, 22, 0.3) 0%, transparent 70%);
+    border-radius: 50%;
+    transform: translate(30%, -30%);
+}
+
+.podbor-app .generated-mask {
+    margin-top: 20px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    z-index: 1;
+}
+
+.podbor-app .generated-mask label {
+    display: block;
+    margin-bottom: 12px;
+    font-weight: 600;
+    color: #f97316;
+    text-align: center;
+    font-size: 0.95em;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.podbor-app #generated-mask-display {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #f1f5f9;
+    letter-spacing: 0.5px;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    text-align: center;
+    border: 1px solid rgba(249, 115, 22, 0.3);
+    word-break: break-all;
+}
+
+.podbor-app .mask-parameters {
+    margin-top: 24px;
+}
+
+.podbor-app .parameter-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.podbor-app .parameter-item {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    padding: 18px;
+    border-radius: 14px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.podbor-app .parameter-item:hover {
+    border-color: #1e40af;
+    box-shadow: 0 8px 25px rgba(30, 64, 175, 0.1);
+}
+
+.podbor-app .param-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 0.85em;
+    margin-right: 10px;
+    box-shadow: 0 3px 10px rgba(249, 115, 22, 0.3);
+}
+
+.podbor-app .parameter-item label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 0.9em;
+}
+
+.podbor-app .parameter-item select,
+.podbor-app .parameter-item input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 0.9em;
+    background: white;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: inherit;
+    color: #1e293b;
+}
+
+.podbor-app .parameter-item select:focus,
+.podbor-app .parameter-item input:focus {
+    border-color: #1e40af;
+    box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.1);
+    outline: none;
+}
+
+.podbor-app .validation-errors {
+    margin-top: 16px;
+    padding: 14px;
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    color: white;
+    border-radius: 12px;
+    display: none;
+    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+}
+
+.podbor-app .validation-errors.show {
+    display: block;
+}
+
+.podbor-app .badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    color: #1e40af;
+    font-size: 0.85em;
+    font-weight: 600;
+    border: 1px solid #93c5fd;
+}
+
+.podbor-app .ts-range {
+    font-size: 0.9em;
+    color: #64748b;
+}
+
+.podbor-app .status-badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.8em;
+    font-weight: 600;
+}
+
+.podbor-app .status-badge.ok {
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    color: #166534;
+    border: 1px solid #86efac;
+}
+
+.podbor-app .status-badge.bad {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    color: #dc2626;
+    border: 1px solid #fca5a5;
+}
+
+.podbor-app .ts-note {
+    margin-top: 10px;
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border: 1px solid #fca5a5;
+    color: #dc2626;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 0.9em;
+}
+
+.podbor-app .no-results {
+    text-align: center;
+    color: #64748b;
+    font-style: italic;
+    padding: 50px 20px;
+    font-size: 1.05em;
+}
+
+.podbor-app .error-message {
+    color: #dc2626;
+    font-size: 0.85em;
+    margin-top: 6px;
+    display: block;
+    font-weight: 500;
+}
+
+.podbor-app .error-message.hidden {
+    display: none;
+}
+
+.podbor-app .success-message {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    color: white;
+    padding: 16px 20px;
+    border-radius: 12px;
+    margin: 12px 0;
+    text-align: center;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
+}
+
+.podbor-app .validation-summary {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border: 2px solid #fca5a5;
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    color: #dc2626;
+    font-weight: 500;
+    display: none;
+}
+
+.podbor-app .validation-summary.show {
+    display: block;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.podbor-app .validation-summary .summary-title {
+    font-weight: 700;
+    margin-bottom: 10px;
+    font-size: 1em;
+}
+
+.podbor-app .validation-summary ul {
+    margin: 0;
+    padding-left: 22px;
+}
+
+.podbor-app .validation-summary li {
+    margin-bottom: 4px;
+}
+
+.podbor-app .form-group input.error,
+.podbor-app .form-group select.error {
+    border-color: #dc2626 !important;
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.podbor-app .accuracy-check-success {
+    color: #059669 !important;
+    font-weight: 700;
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    padding: 8px 14px;
+    border-radius: 10px;
+    border-left: 4px solid #059669;
+    display: inline-block;
+}
+
+.podbor-app .accuracy-check-error {
+    color: #dc2626 !important;
+    font-weight: 700;
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    padding: 8px 14px;
+    border-radius: 10px;
+    border-left: 4px solid #dc2626;
+    display: inline-block;
+}
+
+.podbor-app .accuracy-check-neutral {
+    color: #64748b;
+    font-style: italic;
+}
+
+.podbor-app .accuracy-check-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* Кнопка отправки ТКП */
+.podbor-app .btn-send-tkp {
+    display: none;
+    width: 100%;
+    padding: 18px 32px;
+    margin-top: 24px;
+    border: none;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: inherit;
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    color: white;
+    box-shadow: 0 4px 20px rgba(5, 150, 105, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.podbor-app .btn-send-tkp.visible {
+    display: block;
+    animation: fadeInUp 0.4s ease-out;
+}
+
+.podbor-app .btn-send-tkp:hover {
+    background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(5, 150, 105, 0.5);
+}
+
+.podbor-app .btn-send-tkp:active {
+    transform: translateY(-1px);
+}
+
+.podbor-app .btn-send-tkp.sending {
+    background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+    cursor: wait;
+    box-shadow: 0 4px 15px rgba(100, 116, 139, 0.3);
+}
+
+.podbor-app .btn-send-tkp.sent {
+    background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
+    box-shadow: 0 4px 20px rgba(30, 64, 175, 0.4);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Уведомление об отправке */
+.podbor-app .send-notification {
+    display: none;
+    margin-top: 16px;
+    padding: 16px 20px;
+    border-radius: 12px;
+    font-weight: 600;
+    text-align: center;
+    animation: fadeInUp 0.3s ease-out;
+}
+
+.podbor-app .send-notification.success {
+    display: block;
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    color: #065f46;
+    border: 1px solid #86efac;
+}
+
+.podbor-app .send-notification.error {
+    display: block;
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    color: #dc2626;
+    border: 1px solid #fca5a5;
+}
+
+@media (max-width: 768px) {
+    .podbor-app {
+        padding: 16px;
+    }
+    .podbor-app header {
+        flex-direction: column;
+        gap: 16px;
+        padding: 20px;
+    }
+    .podbor-app .header-logo-left {
+        height: 45px;
+    }
+    .podbor-app .header-logo-right {
+        height: 55px;
+    }
+    .podbor-app header h1 {
+        font-size: 1.4em;
+        position: static;
+        transform: none;
+        order: -1;
+    }
+    .podbor-app .main-content {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    .podbor-app .sensor-specs {
+        grid-template-columns: 1fr;
+    }
+    .podbor-app .parameter-row {
+        grid-template-columns: 1fr;
+    }
+    .podbor-app .tab {
+        padding: 10px 16px;
+        font-size: 0.9em;
+    }
+    .podbor-app .form-section,
+    .podbor-app .results-section {
+        padding: 20px;
+    }
+}
+</style>
+
+<!-- === HTML РАЗМЕТКА === -->
+<div class="podbor-app">
+    <div class="container">
+        <header>
+            <img src="logo-turbo-don.png" alt="Turbo-Don" class="header-logo header-logo-left">
+            <h1>Подбор датчиков давления</h1>
+            <img src="made-in-russia.png" alt="Made in Russia" class="header-logo header-logo-right">
+        </header>
+
+        <div class="tabs">
+            <div class="tab-list" role="tablist">
+                <button class="tab active" role="tab" aria-selected="true" aria-controls="tab-ps" id="tab-btn-ps">Подбор ДИ и ДА</button>
+                <button class="tab" role="tab" aria-selected="false" aria-controls="tab-other" id="tab-btn-other">Подбор и расчёт датчиков перепада давления</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Вкладка 1: Подбор ДИ и ДА -->
+            <div class="form-section tab-panel active" id="tab-ps" role="tabpanel" aria-labelledby="tab-btn-ps">
+                <h3>Параметры</h3>
+                
+                <div id="validation-summary" class="validation-summary">
+                    <div class="summary-title">⚠️ Обнаружены ошибки в заполнении формы:</div>
+                    <ul id="validation-errors"></ul>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pressure-range">Тип преобразователя давления:</label>
+                    <select id="pressure-range" name="pressure-range">
+                        <option value="">Выбрать тип преобразователя</option>
+                        <option value="excess">Избыточный (-100…40000 кПа)</option>
+                        <option value="absolute">Абсолютный (0…40000 кПа)</option>
+                    </select>
+                    <span id="pressure-range-error" class="error-message hidden"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="pressure-range-input">Диапазон рабочего давления (кПа):</label>
+                    <div class="input-range">
+                        <input type="text" inputmode="decimal" id="min-pressure" name="min-pressure" placeholder="Мин">
+                        <span class="range-separator">—</span>
+                        <input type="text" inputmode="decimal" id="max-pressure" name="max-pressure" placeholder="Макс">
+                    </div>
+                    <span id="min-pressure-error" class="error-message hidden"></span>
+                    <span id="max-pressure-error" class="error-message hidden"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="accuracy">Предел допускаемой основной погрешности (%):</label>
+                    <select id="accuracy" name="accuracy">
+                        <option value="">Выберите точность</option>
+                        <option value="0.075">±0.075</option>
+                        <option value="0.1">±0.1</option>
+                        <option value="0.15">±0.15</option>
+                        <option value="0.25">±0.25</option>
+                        <option value="0.5">±0.5</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="explosion-protection">Исполнение взрывозащиты:</label>
+                    <select id="explosion-protection" name="explosion-protection">
+                        <option value="">Выберите исполнение</option>
+                        <option value="Exi">Exi – взрывозащищенное исполнение с искробезопасной цепью</option>
+                        <option value="Exd">Exd – исполнение с видом взрывозащиты «взрывонепроницаемая оболочка d»</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="temperature-range">Диапазон температур окружающей среды:</label>
+                    <select id="temperature-range" name="temperature-range">
+                        <option value="">Выберите диапазон</option>
+                        <option value="M">М – от минус 30 °С до плюс 80 °С</option>
+                        <option value="X">Х – от минус 50 °С до плюс 85 °С</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="power-type">Тип напряжения питания:</label>
+                    <select id="power-type" name="power-type">
+                        <option value="">Выберите тип питания</option>
+                        <option value="A">А – автономное</option>
+                        <option value="B">В – внешнее</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="indicator">Встроенный индикатор (ЖКИ):</label>
+                    <select id="indicator" name="indicator">
+                        <option value="">Выберите наличие индикатора</option>
+                        <option value="И">И – с индикатором</option>
+                        <option value="0">0 – отсутствует</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="output-signal">Тип выходного сигнала:</label>
+                    <select id="output-signal" name="output-signal">
+                        <option value="">Выберите тип сигнала</option>
+                        <option value="Т">Т – 4-20 mA (токовый)</option>
+                        <option value="П">П – 0,4-2,0 В (потенциальный)</option>
+                        <option value="Ц">Ц – RS-485 (цифровой)</option>
+                        <option value="М">М – 4-20 мА с HART-модемом</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="measured-medium">Измеряемая среда:</label>
+                    <select id="measured-medium" name="measured-medium">
+                        <option value="">Выберите среду</option>
+                        <option value="G">G – газ</option>
+                        <option value="Н">H – жидкость</option>
+                        <option value="S">S – пар</option>
+                    </select>
+                </div>
+
+                <button type="button" id="find-sensors" class="btn-primary">Подобрать маску</button>
+                <button type="button" id="clear-form" class="btn-secondary">Очистить форму</button>
+            </div>
+
+            <div class="results-section tab-panel active" id="tab-ps-results" role="tabpanel" aria-labelledby="tab-btn-ps">
+                <h3>Результаты подбора</h3>
+                <div id="results-container">
+                    <p class="no-results">Выберите параметры и нажмите "Подобрать маску"</p>
+                </div>
+                
+                <!-- Кнопка отправки ТКП для вкладки 1 -->
+                <button type="button" id="btn-send-tkp-ps" class="btn-send-tkp">
+                    📧 Отправить маску для выставления ТКП
+                </button>
+                <div id="send-notification-ps" class="send-notification"></div>
+            </div>
+        </div>
+
+        <!-- Вкладка 2: Датчики перепада давления -->
+        <div class="main-content tab-panel" id="tab-other" role="tabpanel" aria-labelledby="tab-btn-other" hidden>
+            <div class="form-section">
+                <h3>Параметры</h3>
+                <div class="form-group">
+                    <label for="dp-dn">DN - условный проход трубопровода, мм:</label>
+                    <input type="text" inputmode="decimal" id="dp-dn" placeholder="например, 600" />
+                </div>
+                <div class="form-group">
+                    <label for="dp-xi">ξ - коэффициент гидравлического сопротивления УФП:</label>
+                    <input type="text" inputmode="decimal" id="dp-xi" placeholder="например, 3.1" />
+                </div>
+                <div class="form-group">
+                    <label for="dp-pmax">Ризб min – минимальное избыточное давление, МПа:</label>
+                    <input type="text" inputmode="decimal" id="dp-pmax" placeholder="например, 10" />
+                </div>
+                <div class="form-group">
+                    <label for="dp-tmin">Тизм.среды max – максимальная температура среды, ⁰С:</label>
+                    <input type="text" inputmode="decimal" id="dp-tmin" placeholder="например, -20" />
+                </div>
+                <div class="form-group">
+                    <label for="dp-rho">Плотность газа при стандартных условиях, кг/м³:</label>
+                    <input type="text" inputmode="decimal" id="dp-rho" placeholder="например, 0,700" value="0,700" />
+                </div>
+                <div class="form-group">
+                    <label for="dp-qmax">q max раб. - максимальный расход газа, м³/ч:</label>
+                    <input type="text" inputmode="decimal" id="dp-qmax" placeholder="например, 1500" />
+                </div>
+                <button type="button" class="btn-primary" id="dp-calc">Рассчитать</button>
+            </div>
+            
+            <div class="results-section">
+                <h3>Расчёт ВПИ</h3>
+                <div id="other-results-container">
+                    <div class="sensor-specs">
+                        <div class="spec-item"><span class="spec-label">ρраб по Pmax,Tmax (кг/м³):</span> <span id="dp-rho-work-max">—</span></div>
+                        <div class="spec-item"><span class="spec-label">W (скорость потока), м/с:</span> <span id="dp-wmax">—</span></div>
+                        <div class="spec-item"><span class="spec-label">Δω (Па):</span> <span id="dp-domega-max-pa">—</span></div>
+                        <div class="spec-item"><span class="spec-label">Δω (кПа):</span> <span id="dp-domega-max-kpa">—</span></div>
+                        <div class="spec-item"><span class="spec-label">Δω (МПа):</span> <span id="dp-domega-max-mpa">—</span></div>
+                        <div class="spec-item"><span class="spec-label">ΔPв ≥ 1,5·Δωmax (Па):</span> <span id="dp-pvpi-pa">—</span></div>
+                    </div>
+                </div>
+                
+                <h3>Проверка точности</h3>
+                <div class="form-group">
+                    <label for="dp-gamma">γ - Предел допускаемой основной приведенной погрешности, %:</label>
+                    <select id="dp-gamma">
+                        <option value="">Выберите значение</option>
+                        <option value="0.075">±0,075</option>
+                        <option value="0.1">±0,1</option>
+                        <option value="0.15">±0,15</option>
+                        <option value="0.25">±0,25</option>
+                        <option value="0.5">±0,5</option>
+                    </select>
+                </div>
+                <div class="sensor-specs">
+                    <div class="spec-item"><span class="spec-label">Минимальный ВПИ (1,5×Δωmax), кПа:</span> <span id="dp-min-vpi-kpa">—</span></div>
+                    <div class="spec-item"><span class="spec-label">Выбранный ВПИ датчика, кПа:</span> <span id="dp-selected-vpi-kpa">—</span></div>
+                    <div class="spec-item"><span class="spec-label">Рабочее давление датчика, МПа:</span> <span id="dp-working-pressure">—</span></div>
+                    <div class="spec-item"><span class="spec-label">Относительная погрешность U, %:</span> <span id="dp-accuracy-u">—</span></div>
+                    <div class="spec-item accuracy-check-inline"><span class="spec-label">Проверка точности:</span> <span id="dp-accuracy-check">—</span></div>
+                </div>
+            </div>
+
+            <!-- Секция маски -->
+            <div class="mask-section">
+                <h3>Маска модели датчика</h3>
+                <div class="mask-display">
+                    <div class="generated-mask">
+                        <label>Сформированная маска:</label>
+                        <div id="generated-mask-display">Turbo Flow-PS–BP-XX–XXX–XX–X,XXX–XXX–X–X–X–X–X–X–X</div>
+                    </div>
+                </div>
+                
+                <div class="mask-parameters">
+                    <div class="parameter-row">
+                        <div class="parameter-item">
+                            <span class="param-number">1</span>
+                            <label>Исполнение взрывозащиты</label>
+                            <select id="mask-explosion-protection">
+                                <option value="">Выберите</option>
+                                <option value="Exi">Exi – взрывозащищенное исполнение</option>
+                                <option value="Exd">Exd – взрывонепроницаемая оболочка</option>
+                            </select>
+                        </div>
+                        <div class="parameter-item">
+                            <span class="param-number">2</span>
+                            <label>Диапазон температур окружающей среды</label>
+                            <select id="mask-temperature-range">
+                                <option value="">Выберите</option>
+                                <option value="M">М (от -30 °С до +80 °С)</option>
+                                <option value="X">Х (от -50 °С до +85 °С)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="parameter-row">
+                        <div class="parameter-item">
+                            <span class="param-number">3</span>
+                            <label>Тип напряжения питания</label>
+                            <select id="mask-power-type">
+                                <option value="">Выберите</option>
+                                <option value="A">А (автономное)</option>
+                                <option value="B">В (внешнее)</option>
+                            </select>
+                        </div>
+                        <div class="parameter-item">
+                            <span class="param-number">4</span>
+                            <label>Встроенный индикатор (ЖКИ)</label>
+                            <select id="mask-indicator">
+                                <option value="">Выберите</option>
+                                <option value="И">И (с индикатором)</option>
+                                <option value="0">0 (отсутствует)</option>
+                            </select>
+                        </div>
+                        <div class="parameter-item">
+                            <span class="param-number">5</span>
+                            <label>Тип выходного сигнала</label>
+                            <select id="mask-output-signal">
+                                <option value="">Выберите</option>
+                                <option value="Т">Т (4-20 mA)</option>
+                                <option value="П">П (0,4-2,0 В)</option>
+                                <option value="Ц">Ц (RS-485)</option>
+                                <option value="М">М (4-20 мА с HART)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="parameter-row">
+                        <div class="parameter-item">
+                            <span class="param-number">6</span>
+                            <label>Измеряемая среда</label>
+                            <select id="mask-measured-medium">
+                                <option value="">Выберите</option>
+                                <option value="G">G (газ)</option>
+                                <option value="Н">H (жидкость)</option>
+                                <option value="S">S (пар)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="validation-errors" id="mask-validation-errors"></div>
+                
+                <!-- Кнопка отправки ТКП -->
+                <button type="button" id="btn-send-tkp-dp" class="btn-send-tkp">
+                    📧 Отправить маску для выставления ТКП
+                </button>
+                <div id="send-notification-dp" class="send-notification"></div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+// === JAVASCRIPT ПРИЛОЖЕНИЯ ===
+
+// База данных датчиков
+const sensorsDatabase = [
+    {
+        id: 1,
+        modification: "ДА",
+        pressureRange: "0-40000",
+        maxPressure: 40000,
+        accuracy: [0.075, 0.1, 0.15, 0.25, 0.5],
+        explosionProtection: ["Exi", "Exd"],
+        temperatureRange: ["M", "X"],
+        powerType: ["A", "B"],
+        indicator: ["И", "0"],
+        outputSignal: ["Т", "П", "Ц", "М"],
+        measuredMedium: ["G", "Н", "S"],
+        description: "Датчик абсолютного давления"
+    },
+    {
+        id: 2,
+        modification: "ДИ",
+        pressureRange: "-100-40000",
+        maxPressure: 40000,
+        accuracy: [0.075, 0.1, 0.15, 0.25, 0.5],
+        explosionProtection: ["Exi", "Exd"],
+        temperatureRange: ["M", "X"],
+        powerType: ["A", "B"],
+        indicator: ["И", "0"],
+        outputSignal: ["Т", "П", "Ц", "М"],
+        measuredMedium: ["G", "Н", "S"],
+        description: "Датчик избыточного давления"
+    },
+    {
+        id: 3,
+        modification: "ДД",
+        pressureRange: "0-14000",
+        maxPressure: 21000,
+        accuracy: [0.075, 0.1, 0.15, 0.25, 0.5],
+        explosionProtection: ["Exi", "Exd"],
+        temperatureRange: ["M", "X"],
+        powerType: ["A", "B"],
+        indicator: ["И", "0"],
+        outputSignal: ["Т", "П", "Ц", "М"],
+        measuredMedium: ["G", "Н", "S"],
+        description: "Датчик давления"
+    }
+];
+
+// Стандартные ряды давления в кПа
+const standardPressureSeries = [1600, 2500, 4000, 6300, 10000, 16000, 25000, 40000];
+
+// Маппинг значений
+const maskMapping = {
+    modification: { "ДА": "ДА", "ДИ": "ДИ", "ДД": "ДД" },
+    accuracy: { "0.075": "0.075", "0.1": "0.1", "0.15": "0.15", "0.25": "0.25", "0.5": "0.5" },
+    explosionProtection: { "Exi": "Exi", "Exd": "Exd" },
+    temperatureRange: { "M": "M", "X": "X" },
+    powerType: { "A": "A", "B": "B" },
+    indicator: { "И": "И", "0": "0" },
+    outputSignal: { "Т": "Т", "П": "П", "Ц": "Ц", "М": "М" },
+    measuredMedium: { "G": "G", "Н": "Н", "S": "S" }
+};
+
+// Универсальный парсер числового ввода
+function readNum(id) {
+    const el = document.getElementById(id);
+    if (!el) return NaN;
+    const raw = (el.value || '').replace(/\s+/g, '').replace(/,/g, '.');
+    const num = parseFloat(raw);
+    return Number.isFinite(num) ? num : NaN;
+}
+
+// Получить ближайшее значение из стандартного ряда
+function getNextPressureFromSeries(inputPressure) {
+    for (let pressure of standardPressureSeries) {
+        if (pressure >= inputPressure) return pressure;
+    }
+    return standardPressureSeries[standardPressureSeries.length - 1];
+}
+
+// Инициализация приложения
+document.addEventListener('DOMContentLoaded', function() {
+    initializeEventListeners();
+    initializeTabs();
+    initializeMaskBuilder();
+});
+
+function initializeEventListeners() {
+    document.getElementById('find-sensors').addEventListener('click', findSensors);
+    document.getElementById('clear-form').addEventListener('click', clearForm);
+    document.getElementById('pressure-range').addEventListener('change', function() {
+        updatePressureInputLimits();
+        clearValidationErrors();
+        if (document.getElementById('min-pressure').value || document.getElementById('max-pressure').value) {
+            validatePressureInputs();
+        }
+    });
+    document.getElementById('min-pressure').addEventListener('input', validatePressureInputs);
+    document.getElementById('max-pressure').addEventListener('input', validatePressureInputs);
+    updatePressureInputLimits();
+    
+    // Расчёт перепада давления
+    const calcBtn = document.getElementById('dp-calc');
+    if (calcBtn) {
+        calcBtn.addEventListener('click', calculateSensorSelection);
+    }
+    const gammaSelect = document.getElementById('dp-gamma');
+    if (gammaSelect) {
+        gammaSelect.addEventListener('change', calculateSensorSelection);
+    }
+}
+
+function initializeTabs() {
+    const btnPs = document.getElementById('tab-btn-ps');
+    const btnOther = document.getElementById('tab-btn-other');
+    const panelPs = document.getElementById('tab-ps');
+    const panelPsResults = document.getElementById('tab-ps-results');
+    const panelOther = document.getElementById('tab-other');
+
+    if (!btnPs || !btnOther || !panelPs || !panelOther || !panelPsResults) return;
+
+    const setActive = (active) => {
+        [btnPs, btnOther].forEach(t => t.classList.remove('active'));
+        active.classList.add('active');
+
+        const showPs = active === btnPs;
+        const showOther = active === btnOther;
+
+        panelPs.hidden = !showPs;
+        panelPsResults.hidden = !showPs;
+        panelOther.hidden = !showOther;
+    };
+
+    btnPs.addEventListener('click', () => setActive(btnPs));
+    btnOther.addEventListener('click', () => setActive(btnOther));
+    setActive(btnPs);
+}
+
+function initializeMaskBuilder() {
+    const maskInputs = [
+        'mask-explosion-protection', 'mask-temperature-range', 'mask-power-type',
+        'mask-indicator', 'mask-output-signal', 'mask-measured-medium'
+    ];
+    maskInputs.forEach(inputId => {
+        const element = document.getElementById(inputId);
+        if (element) {
+            element.addEventListener('change', updateGeneratedMask);
+        }
+    });
+}
+
+// Расчёт датчика перепада давления
+function calculateSensorSelection() {
+    const dn = readNum('dp-dn');
+    const xi = readNum('dp-xi');
+    const qmax_h = readNum('dp-qmax');
+    const rho_c = readNum('dp-rho');
+    const pmax = readNum('dp-pmax');
+    const tmin = readNum('dp-tmin');
+
+    if ([dn, xi, pmax, tmin, qmax_h].some(v => isNaN(v))) return;
+
+    const formatDigitsMap = {
+        'dp-wmax': 8, 'dp-domega-max-pa': 6, 'dp-domega-max-kpa': 3,
+        'dp-domega-max-mpa': 6, 'dp-rho-work-max': 6
+    };
+
+    const out = (id, val) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (!Number.isFinite(val)) { el.textContent = '—'; return; }
+        const digits = formatDigitsMap[id] ?? 3;
+        el.textContent = new Intl.NumberFormat('ru-RU', {
+            minimumFractionDigits: digits, maximumFractionDigits: digits
+        }).format(val);
+    };
+
+    const K_COMP = 0.857977285;
+    const T_STD_K = 293.15;
+    const P_STD_MPA = 0.101325;
+    const toKelvin = (tc) => tc + 273.15;
+    const toAbsPressureMPa = (pg) => pg + P_STD_MPA;
+    
+    const computeWorkingRho = (rhoStd, pGaugeMPa, tC) => {
+        const T = toKelvin(tC);
+        const Pabs = toAbsPressureMPa(pGaugeMPa);
+        return rhoStd * (Pabs / P_STD_MPA) * (T_STD_K / T) * (1 / K_COMP);
+    };
+
+    const rhoForQmax = computeWorkingRho(rho_c, pmax, tmin);
+    out('dp-rho-work-max', rhoForQmax);
+
+    if (!isNaN(qmax_h)) {
+        const Qv_max = qmax_h / 3600;
+        const Wmax = (4 * Qv_max) / (3.141592654 * Math.pow(dn / 1000, 2));
+        const dpMaxPa = xi * 8 * rhoForQmax * Math.pow(Qv_max, 2) / (Math.pow(Math.PI, 2) * Math.pow(Math.pow(10, -3) * dn, 4));
+        const dpMaxMPa = dpMaxPa / 1e6;
+        const pvpiPa = dpMaxPa * 1.5;
+        
+        out('dp-rho-work-max', rhoForQmax);
+        out('dp-wmax', Wmax);
+        out('dp-domega-max-pa', dpMaxPa);
+        out('dp-domega-max-kpa', dpMaxPa / 1000);
+        out('dp-domega-max-mpa', dpMaxMPa);
+        out('dp-pvpi-pa', pvpiPa);
+        
+        const gamma = readNum('dp-gamma');
+        
+        if (!isNaN(gamma)) {
+            const vpiRangeKPa = [1.6, 2.5, 4.0, 6.0, 6.3, 10, 16, 25, 40, 60, 63, 100, 160, 250, 400, 600, 630];
+            const vpiRangeMPa = [1.0, 1.6, 2.5, 4.0, 6.0, 6.3, 10, 16];
+            
+            const minVpiKPa = 1.5 * (dpMaxPa / 1000);
+            let selectedVpiKPa = null;
+            
+            for (let vpi of vpiRangeKPa) {
+                if (vpi >= minVpiKPa) { selectedVpiKPa = vpi; break; }
+            }
+            
+            if (!selectedVpiKPa) {
+                const minVpiMPa = minVpiKPa / 1000;
+                for (let vpi of vpiRangeMPa) {
+                    if (vpi >= minVpiMPa) {
+                        selectedVpiKPa = vpi * 1000;
+                        break;
+                    }
+                }
+            }
+            
+            const workingPressureKPa = (pmax + 0.101325) * 1000;
+            const pressureFromSeries = getNextPressureFromSeries(workingPressureKPa);
+            const workingPressure = pressureFromSeries / 1000;
+            
+            let accuracyU = NaN;
+            let accuracyCheck = "—";
+            
+            if (selectedVpiKPa) {
+                const rvpi = selectedVpiKPa;
+                const deltaOmegaMaxKPa = dpMaxPa / 1000;
+                accuracyU = 2 * 0.5 * gamma * (rvpi / deltaOmegaMaxKPa);
+                accuracyCheck = accuracyU <= 5 ? "✓ Соответствует (U ≤ 5%)" : "✗ Не соответствует (U > 5%)";
+            }
+            
+            out('dp-min-vpi-kpa', minVpiKPa);
+            out('dp-selected-vpi-kpa', selectedVpiKPa || "Не найден");
+            out('dp-working-pressure', workingPressure);
+            out('dp-accuracy-u', accuracyU);
+            
+            const accuracyCheckElement = document.getElementById('dp-accuracy-check');
+            accuracyCheckElement.textContent = accuracyCheck;
+            accuracyCheckElement.classList.remove('accuracy-check-success', 'accuracy-check-error', 'accuracy-check-neutral');
+            
+            if (accuracyCheck.includes('✓')) {
+                accuracyCheckElement.classList.add('accuracy-check-success');
+            } else if (accuracyCheck.includes('✗')) {
+                accuracyCheckElement.classList.add('accuracy-check-error');
+            } else {
+                accuracyCheckElement.classList.add('accuracy-check-neutral');
+            }
+        } else {
+            const minVpiKPa = 1.5 * (dpMaxPa / 1000);
+            out('dp-min-vpi-kpa', minVpiKPa);
+            out('dp-selected-vpi-kpa', "—");
+            const workingPressureKPaElse = (pmax + 0.101325) * 1000;
+            const pressureFromSeriesElse = getNextPressureFromSeries(workingPressureKPaElse);
+            out('dp-working-pressure', pressureFromSeriesElse / 1000);
+            out('dp-accuracy-u', "—");
+            
+            const accuracyCheckElement = document.getElementById('dp-accuracy-check');
+            accuracyCheckElement.textContent = "Выберите γ для проверки точности";
+            accuracyCheckElement.classList.remove('accuracy-check-success', 'accuracy-check-error');
+            accuracyCheckElement.classList.add('accuracy-check-neutral');
+        }
+    }
+    
+    updateGeneratedMask();
+    
+    // Показываем кнопку отправки после расчёта
+    showSendButton('dp');
+}
+
+// Поиск датчиков
+function findSensors() {
+    const criteria = getSearchCriteria();
+    const results = filterSensors(criteria);
+    displayResults(results, criteria);
+    updateGeneratedMask();
+    
+    // Показываем кнопку отправки если есть результаты
+    if (results.length > 0) {
+        showSendButton('ps');
+    }
+}
+
+function getSearchCriteria() {
+    return {
+        pressureRange: document.getElementById('pressure-range').value,
+        maxPressure: readNum('max-pressure') || null,
+        accuracy: readNum('accuracy') || null,
+        explosionProtection: document.getElementById('explosion-protection').value,
+        temperatureRange: document.getElementById('temperature-range').value,
+        powerType: document.getElementById('power-type').value,
+        indicator: document.getElementById('indicator').value,
+        outputSignal: document.getElementById('output-signal').value,
+        measuredMedium: document.getElementById('measured-medium').value
+    };
+}
+
+function filterSensors(criteria) {
+    return sensorsDatabase.filter(sensor => {
+        if (criteria.pressureRange) {
+            const typeToModification = { absolute: "ДА", excess: "ДИ" };
+            const requiredModification = typeToModification[criteria.pressureRange];
+            if (requiredModification && sensor.modification !== requiredModification) return false;
+        }
+        if (criteria.maxPressure && sensor.maxPressure < criteria.maxPressure) return false;
+        if (criteria.accuracy && !sensor.accuracy.includes(criteria.accuracy)) return false;
+        if (criteria.explosionProtection && !sensor.explosionProtection.includes(criteria.explosionProtection)) return false;
+        if (criteria.temperatureRange && !sensor.temperatureRange.includes(criteria.temperatureRange)) return false;
+        if (criteria.powerType && !sensor.powerType.includes(criteria.powerType)) return false;
+        if (criteria.indicator && !sensor.indicator.includes(criteria.indicator)) return false;
+        if (criteria.outputSignal && !sensor.outputSignal.includes(criteria.outputSignal)) return false;
+        if (criteria.measuredMedium && !sensor.measuredMedium.includes(criteria.measuredMedium)) return false;
+        return true;
+    });
+}
+
+function displayResults(results, criteria) {
+    const container = document.getElementById('results-container');
+    if (results.length === 0) {
+        container.innerHTML = '<p class="no-results">По заданным критериям датчики не найдены.</p>';
+        return;
+    }
+    
+    let html = '<div class="success-message">Найдено подходящих датчиков: ' + results.length + '</div>';
+    
+    results.forEach(sensor => {
+        const generatedMask = generateSensorMask(sensor, criteria);
+        const sensorType = criteria.explosionProtection === "Exd" ? "20" : "10";
+        const standardPressure = criteria.maxPressure ? getNextPressureFromSeries(criteria.maxPressure) : sensor.maxPressure;
+        
+        html += '<div class="sensor-card">' +
+            '<div class="sensor-model">Turbo Flow-PS–BP-' + sensorType + '-' + generatedMask + '</div>' +
+            '<div class="sensor-specs">' +
+            '<div class="spec-item"><span class="spec-label">Модификация:</span> ' + sensor.modification + ' (' + sensor.description + ')</div>' +
+            '<div class="spec-item"><span class="spec-label">Диапазон давления:</span> ' + formatPressureRange(sensor.pressureRange) + ' кПа</div>' +
+            '<div class="spec-item"><span class="spec-label">Макс. рабочее давление:</span> ' + standardPressure + ' кПа</div>' +
+            '<div class="spec-item"><span class="spec-label">Точность:</span> ±' + (criteria.accuracy || sensor.accuracy.join(', ±')) + '%</div>' +
+            '<div class="spec-item"><span class="spec-label">Взрывозащита:</span> ' + formatExplosionProtection(criteria.explosionProtection) + '</div>' +
+            '<div class="spec-item"><span class="spec-label">Температура:</span> ' + formatTemperatureRange(criteria.temperatureRange) + '</div>' +
+            '<div class="spec-item"><span class="spec-label">Питание:</span> ' + formatPowerType(criteria.powerType) + '</div>' +
+            '<div class="spec-item"><span class="spec-label">Индикатор:</span> ' + formatIndicator(criteria.indicator) + '</div>' +
+            '<div class="spec-item"><span class="spec-label">Выходной сигнал:</span> ' + formatOutputSignal(criteria.outputSignal) + '</div>' +
+            '<div class="spec-item"><span class="spec-label">Измеряемая среда:</span> ' + formatMeasuredMedium(criteria.measuredMedium) + '</div>' +
+            '</div></div>';
+    });
+    
+    container.innerHTML = html;
+}
+
+function generateSensorMask(sensor, criteria) {
+    const parts = [];
+    parts.push(maskMapping.modification[sensor.modification] || "XXX");
+    const standardPressure = criteria.maxPressure ? getNextPressureFromSeries(criteria.maxPressure) : null;
+    parts.push(standardPressure ? standardPressure.toString() : "XXXXX");
+    parts.push(criteria.accuracy ? criteria.accuracy.toString().replace('.', ',') : "XXX");
+    parts.push(criteria.explosionProtection ? maskMapping.explosionProtection[criteria.explosionProtection] : "X");
+    parts.push(criteria.temperatureRange ? maskMapping.temperatureRange[criteria.temperatureRange] : "X");
+    parts.push(criteria.powerType ? maskMapping.powerType[criteria.powerType] : "X");
+    parts.push(criteria.indicator ? maskMapping.indicator[criteria.indicator] : "X");
+    parts.push(criteria.outputSignal ? maskMapping.outputSignal[criteria.outputSignal] : "X");
+    parts.push(criteria.measuredMedium ? maskMapping.measuredMedium[criteria.measuredMedium] : "X");
+    return parts.join("-");
+}
+
+function updateGeneratedMask() {
+    const vpiElement = document.getElementById('dp-selected-vpi-kpa');
+    const vpiFromCalculation = vpiElement ? vpiElement.textContent : null;
+    const vpiKPa = (vpiFromCalculation && vpiFromCalculation !== '—' && vpiFromCalculation !== 'Не найден') 
+        ? parseFloat(vpiFromCalculation.replace(',', '.').replace(/\s/g, '')) : null;
+    
+    const workingPressureElement = document.getElementById('dp-working-pressure');
+    const workingPressureFromCalculation = workingPressureElement ? workingPressureElement.textContent : null;
+    const workingPressureMPa = (workingPressureFromCalculation && workingPressureFromCalculation !== '—') 
+        ? parseFloat(workingPressureFromCalculation.replace(',', '.').replace(/\s/g, '')) : null;
+    
+    const gammaElement = document.getElementById('dp-gamma');
+    const accuracy = gammaElement && gammaElement.value ? gammaElement.value : 'X,XXX';
+    
+    const explosionProtection = document.getElementById('mask-explosion-protection')?.value || 'X';
+    const temperatureRange = document.getElementById('mask-temperature-range')?.value || 'X';
+    const powerType = document.getElementById('mask-power-type')?.value || 'X';
+    const indicator = document.getElementById('mask-indicator')?.value || 'X';
+    const outputSignal = document.getElementById('mask-output-signal')?.value || 'X';
+    const measuredMedium = document.getElementById('mask-measured-medium')?.value || 'X';
+
+    const sensorType = explosionProtection === "Exd" ? "20" : "10";
+    const modification = "ДД";
+    
+    let pressureRange = "X,X";
+    if (vpiKPa && workingPressureMPa) {
+        const vpiFormatted = vpiKPa.toString().replace('.', ',');
+        const workingPressureKPa = Math.round(workingPressureMPa * 1000);
+        const nextPressureFromSeries = getNextPressureFromSeries(workingPressureKPa);
+        pressureRange = vpiFormatted + '/' + nextPressureFromSeries;
+    }
+    
+    const accuracyFormatted = accuracy ? accuracy.toString().replace('.', ',') : 'X,XXX';
+    const generatedMask = 'Turbo Flow-PS–BP-' + sensorType + '–' + modification + '–' + pressureRange + ' кПа–' + accuracyFormatted + '–' + explosionProtection + '–' + temperatureRange + '–' + powerType + '–' + indicator + '–' + outputSignal + '–' + measuredMedium;
+
+    const maskDisplay = document.getElementById('generated-mask-display');
+    if (maskDisplay) maskDisplay.textContent = generatedMask;
+}
+
+function clearForm() {
+    document.querySelectorAll('#tab-ps select, #tab-ps input').forEach(el => el.value = '');
+    document.getElementById('results-container').innerHTML = '<p class="no-results">Выберите параметры и нажмите "Подобрать маску"</p>';
+    clearValidationErrors();
+}
+
+// Валидация
+function validatePressureInputs() {
+    const pressureRangeSelect = document.getElementById('pressure-range');
+    const selectedType = pressureRangeSelect.value;
+    const minValue = readNum('min-pressure');
+    const maxValue = readNum('max-pressure');
+    const errors = [];
+    
+    clearValidationErrors();
+    
+    if (!selectedType) {
+        showFieldError('pressure-range', 'Необходимо выбрать тип преобразователя');
+        errors.push('Не выбран тип преобразователя давления');
+    }
+    
+    if (selectedType && !isNaN(minValue)) {
+        if (selectedType === 'absolute' && (minValue < 0 || minValue > 40000)) {
+            showFieldError('min-pressure', 'Диапазон: 0-40000 кПа');
+            errors.push('Минимальное давление вне диапазона');
+        } else if (selectedType === 'excess' && (minValue < -100 || minValue > 40000)) {
+            showFieldError('min-pressure', 'Диапазон: -100-40000 кПа');
+            errors.push('Минимальное давление вне диапазона');
+        }
+    }
+    
+    if (selectedType && !isNaN(maxValue)) {
+        if (selectedType === 'absolute' && (maxValue < 0 || maxValue > 40000)) {
+            showFieldError('max-pressure', 'Диапазон: 0-40000 кПа');
+            errors.push('Максимальное давление вне диапазона');
+        } else if (selectedType === 'excess' && (maxValue < -100 || maxValue > 40000)) {
+            showFieldError('max-pressure', 'Диапазон: -100-40000 кПа');
+            errors.push('Максимальное давление вне диапазона');
+        }
+    }
+    
+    if (!isNaN(minValue) && !isNaN(maxValue) && minValue >= maxValue) {
+        showFieldError('max-pressure', 'Макс. должно быть больше мин.');
+        errors.push('Максимальное давление должно быть больше минимального');
+    }
+    
+    if (errors.length > 0) showValidationSummary(errors);
+    return errors.length === 0;
+}
+
+function showFieldError(fieldId, message) {
+    const field = document.getElementById(fieldId);
+    const errorElement = document.getElementById(fieldId + '-error');
+    if (field) field.classList.add('error');
+    if (errorElement) {
+        errorElement.textContent = message;
+        errorElement.classList.remove('hidden');
+    }
+}
+
+function clearValidationErrors() {
+    ['pressure-range', 'min-pressure', 'max-pressure'].forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        const errorElement = document.getElementById(fieldId + '-error');
+        if (field) field.classList.remove('error');
+        if (errorElement) {
+            errorElement.classList.add('hidden');
+            errorElement.textContent = '';
+        }
+    });
+    const validationSummary = document.getElementById('validation-summary');
+    if (validationSummary) validationSummary.classList.remove('show');
+}
+
+function showValidationSummary(errors) {
+    const validationSummary = document.getElementById('validation-summary');
+    const errorsList = document.getElementById('validation-errors');
+    if (validationSummary && errorsList) {
+        errorsList.innerHTML = '';
+        errors.forEach(error => {
+            const li = document.createElement('li');
+            li.textContent = error;
+            errorsList.appendChild(li);
+        });
+        validationSummary.classList.add('show');
+    }
+}
+
+function updatePressureInputLimits() {
+    const pressureRangeSelect = document.getElementById('pressure-range');
+    const minPressureInput = document.getElementById('min-pressure');
+    const maxPressureInput = document.getElementById('max-pressure');
+    if (!pressureRangeSelect || !minPressureInput || !maxPressureInput) return;
+    
+    const selectedType = pressureRangeSelect.value;
+    if (selectedType === 'absolute') {
+        minPressureInput.min = '0'; minPressureInput.max = '40000';
+        maxPressureInput.min = '0'; maxPressureInput.max = '40000';
+    } else if (selectedType === 'excess') {
+        minPressureInput.min = '-100'; minPressureInput.max = '40000';
+        maxPressureInput.min = '-100'; maxPressureInput.max = '40000';
+    }
+}
+
+// Форматирование
+function formatPressureRange(range) {
+    const ranges = { "0-40000": "0...40000", "-100-40000": "-100...40000", "0-14000": "0...14000" };
+    return ranges[range] || range;
+}
+function formatExplosionProtection(protection) {
+    if (!protection) return "Не указано";
+    return protection === "Exi" ? "Взрывозащищенное исполнение" : "Взрывонепроницаемая оболочка";
+}
+function formatTemperatureRange(range) {
+    if (!range) return "Не указано";
+    return range === "M" ? "от -30°C до +80°C" : "от -50°C до +85°C";
+}
+function formatPowerType(type) {
+    if (!type) return "Не указано";
+    return type === "A" ? "Автономное" : "Внешнее";
+}
+function formatIndicator(indicator) {
+    if (!indicator) return "Не указано";
+    return indicator === "И" ? "С индикатором" : "Без индикатора";
+}
+function formatOutputSignal(signal) {
+    if (!signal) return "Не указано";
+    const signals = { "Т": "4-20 мА", "П": "0.4-2.0 В", "Ц": "RS-485", "М": "4-20 мА с HART" };
+    return signals[signal] || signal;
+}
+function formatMeasuredMedium(medium) {
+    if (!medium) return "Не указано";
+    const mediums = { "G": "Газ", "Н": "Жидкость", "S": "Пар" };
+    return mediums[medium] || medium;
+}
+
+// ========================================
+// ОТПРАВКА ЗАЯВКИ НА ТКП
+// ========================================
+
+// URL для отправки (измените на URL вашего WordPress сайта)
+const SEND_TKP_URL = 'send_tkp.php'; // или полный URL: 'https://ваш-сайт.ru/send_tkp.php'
+
+// Инициализация кнопок отправки
+document.addEventListener('DOMContentLoaded', function() {
+    // Кнопка для вкладки 1 (ДИ и ДА)
+    const btnSendPs = document.getElementById('btn-send-tkp-ps');
+    if (btnSendPs) {
+        btnSendPs.addEventListener('click', () => sendTkpRequest('ps'));
+    }
+    
+    // Кнопка для вкладки 2 (Перепад давления)
+    const btnSendDp = document.getElementById('btn-send-tkp-dp');
+    if (btnSendDp) {
+        btnSendDp.addEventListener('click', () => sendTkpRequest('dp'));
+    }
+});
+
+// Показать кнопку отправки после успешного подбора
+function showSendButton(tabType) {
+    const btnId = tabType === 'ps' ? 'btn-send-tkp-ps' : 'btn-send-tkp-dp';
+    const btn = document.getElementById(btnId);
+    if (btn) {
+        btn.classList.add('visible');
+        btn.classList.remove('sent', 'sending');
+        btn.innerHTML = '📧 Отправить маску для выставления ТКП';
+    }
+    // Скрыть предыдущее уведомление
+    const notifId = tabType === 'ps' ? 'send-notification-ps' : 'send-notification-dp';
+    const notif = document.getElementById(notifId);
+    if (notif) {
+        notif.className = 'send-notification';
+        notif.textContent = '';
+    }
+}
+
+// Отправка заявки
+async function sendTkpRequest(tabType) {
+    const btnId = tabType === 'ps' ? 'btn-send-tkp-ps' : 'btn-send-tkp-dp';
+    const notifId = tabType === 'ps' ? 'send-notification-ps' : 'send-notification-dp';
+    const btn = document.getElementById(btnId);
+    const notif = document.getElementById(notifId);
+    
+    if (!btn) return;
+    
+    // Состояние "отправка"
+    btn.classList.add('sending');
+    btn.innerHTML = '⏳ Отправка...';
+    
+    // Собираем данные
+    let data = {};
+    
+    if (tabType === 'ps') {
+        // Вкладка 1: ДИ и ДА
+        const resultsContainer = document.getElementById('results-container');
+        const sensorModel = resultsContainer.querySelector('.sensor-model');
+        
+        data = {
+            tab: 'Подбор ДИ и ДА',
+            mask: sensorModel ? sensorModel.textContent : 'Не сформирована',
+            parameters: {
+                'Тип преобразователя': document.getElementById('pressure-range')?.selectedOptions[0]?.text || '',
+                'Диапазон давления': (document.getElementById('min-pressure')?.value || '') + ' — ' + (document.getElementById('max-pressure')?.value || '') + ' кПа',
+                'Точность': document.getElementById('accuracy')?.selectedOptions[0]?.text || '',
+                'Взрывозащита': document.getElementById('explosion-protection')?.selectedOptions[0]?.text || '',
+                'Температура': document.getElementById('temperature-range')?.selectedOptions[0]?.text || '',
+                'Питание': document.getElementById('power-type')?.selectedOptions[0]?.text || '',
+                'Индикатор': document.getElementById('indicator')?.selectedOptions[0]?.text || '',
+                'Выходной сигнал': document.getElementById('output-signal')?.selectedOptions[0]?.text || '',
+                'Среда': document.getElementById('measured-medium')?.selectedOptions[0]?.text || ''
+            }
+        };
+    } else {
+        // Вкладка 2: Перепад давления
+        const maskDisplay = document.getElementById('generated-mask-display');
+        
+        data = {
+            tab: 'Подбор датчиков перепада давления',
+            mask: maskDisplay ? maskDisplay.textContent : 'Не сформирована',
+            parameters: {
+                'DN (мм)': document.getElementById('dp-dn')?.value || '',
+                'ξ (коэф. сопротивления)': document.getElementById('dp-xi')?.value || '',
+                'Pизб min (МПа)': document.getElementById('dp-pmax')?.value || '',
+                'T среды max (°C)': document.getElementById('dp-tmin')?.value || '',
+                'Плотность (кг/м³)': document.getElementById('dp-rho')?.value || '',
+                'Q max (м³/ч)': document.getElementById('dp-qmax')?.value || '',
+                'γ (погрешность)': document.getElementById('dp-gamma')?.selectedOptions[0]?.text || '',
+                'ВПИ (кПа)': document.getElementById('dp-selected-vpi-kpa')?.textContent || '',
+                'Рабочее давление (МПа)': document.getElementById('dp-working-pressure')?.textContent || '',
+                'Взрывозащита': document.getElementById('mask-explosion-protection')?.selectedOptions[0]?.text || '',
+                'Температура': document.getElementById('mask-temperature-range')?.selectedOptions[0]?.text || '',
+                'Питание': document.getElementById('mask-power-type')?.selectedOptions[0]?.text || '',
+                'Индикатор': document.getElementById('mask-indicator')?.selectedOptions[0]?.text || '',
+                'Выходной сигнал': document.getElementById('mask-output-signal')?.selectedOptions[0]?.text || '',
+                'Среда': document.getElementById('mask-measured-medium')?.selectedOptions[0]?.text || ''
+            }
+        };
+    }
+    
+    try {
+        const response = await fetch(SEND_TKP_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Успех
+            btn.classList.remove('sending');
+            btn.classList.add('sent');
+            btn.innerHTML = '✅ Заявка отправлена!';
+            
+            if (notif) {
+                notif.className = 'send-notification success';
+                notif.textContent = '✅ ' + (result.message || 'Заявка успешно отправлена на sktb_razvitie1@turbo-don.ru');
+            }
+        } else {
+            throw new Error(result.error || 'Неизвестная ошибка');
+        }
+    } catch (error) {
+        console.error('Ошибка отправки:', error);
+        
+        // Если PHP недоступен — открываем mailto
+        btn.classList.remove('sending');
+        btn.innerHTML = '📧 Отправить маску для выставления ТКП';
+        
+        // Fallback: открываем почтовый клиент
+        const subject = encodeURIComponent('Заявка на ТКП: ' + data.mask);
+        const body = encodeURIComponent(formatEmailBody(data));
+        const mailtoLink = 'mailto:sktb_razvitie1@turbo-don.ru?subject=' + subject + '&body=' + body;
+        
+        if (notif) {
+            notif.className = 'send-notification error';
+            notif.innerHTML = '⚠️ Автоматическая отправка недоступна. <a href="' + mailtoLink + '" style="color: #1e40af; text-decoration: underline;">Нажмите здесь</a> чтобы открыть почтовый клиент.';
+        }
+        
+        // Автоматически открываем почтовый клиент
+        window.location.href = mailtoLink;
+    }
+}
+
+// Форматирование тела письма для mailto
+function formatEmailBody(data) {
+    let body = '═══════════════════════════════════════\n';
+    body += 'ЗАЯВКА НА ВЫСТАВЛЕНИЕ ТКП\n';
+    body += '═══════════════════════════════════════\n\n';
+    body += 'СФОРМИРОВАННАЯ МАСКА:\n' + data.mask + '\n\n';
+    body += 'РАЗДЕЛ:\n' + data.tab + '\n\n';
+    body += 'ВЫБРАННЫЕ ПАРАМЕТРЫ:\n';
+    
+    for (const [key, value] of Object.entries(data.parameters)) {
+        if (value && value.trim() && !value.includes('Выберите') && !value.includes('Выбрать')) {
+            body += '  • ' + key + ': ' + value + '\n';
+        }
+    }
+    
+    body += '\n═══════════════════════════════════════\n';
+    body += 'Дата: ' + new Date().toLocaleString('ru-RU') + '\n';
+    body += '═══════════════════════════════════════\n';
+    
+    return body;
+}
+</script>
+

@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # FastAPI приложение
+  fastapi-app:
+    build: .
+    container_name: turbo-helper-app
+    restart: unless-stopped
+    environment:
+      - ENVIRONMENT=production
+    volumes:
+      - ./data.json:/app/data.json:ro
+      - ./static:/app/static:ro
+      - ./templates:/app/templates:ro
+    networks:
+      - app-network
+    depends_on:
+      - nginx
+
+  # Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    container_name: turbo-helper-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./static:/var/www/static:ro
+    networks:
+      - app-network
+    depends_on:
+      - certbot
+
+  # Certbot для SSL сертификатов
+  certbot:
+    image: certbot/certbot
+    container_name: turbo-helper-certbot
+    volumes:
+      - ./nginx/ssl:/etc/letsencrypt
+      - ./nginx/www:/var/www/certbot
+    command: certonly --webroot --webroot-path=/var/www/certbot --email your-email@example.com --agree-tos --no-eff-email --staging -d turbo-helper.ru -d www.turbo-helper.ru
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  ssl-certs:
+  static-files:

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Template</title>
+</head>
+<body>
+    <h1>Test Page</h1>
+    <p>Total: {{ total }}</p>
+    <p>Equipment length: {{ equipment|length }}</p>
+    <p>Equipment exists: {{ equipment is defined }}</p>
+    
+    {% if equipment %}
+        <h2>Equipment List:</h2>
+        {% for item in equipment %}
+            <div>{{ item.name }}</div>
+        {% endfor %}
+    {% else %}
+        <p>No equipment found</p>
+    {% endif %}
+</body>
+</html>

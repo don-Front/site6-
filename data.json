@@ -1,0 +1,229 @@
+{
+  "gas": [
+        {
+          "id": "ufg2",
+          "name": "Turbo Flow UFG-F-V",
+          "manufacturer": "ГазМетрология",
+          "model": "Turbo Flow UFG-F-V",
+          "image": "equipment/turbo_flow_ufg.jpg",
+          "specs": {
+            "flowRange": "1,4–150000 м³/ч",
+            "pressureRange": "0,0025–32 МПа",
+            "tempRange": "-50…+70°C",
+            "ambientTempRange": "-60°C до +70°C",
+            "accuracy": "0,5–2%",
+            "diameter": "50–1400 мм"
+          },
+          "params": {
+            "pressure": "p-high",
+            "temperature": "t-medium",
+            "flow": "q-high",
+            "accuracy": "acc-medium"
+          }
+        },
+        {
+          "id": "tfgs1",
+          "name": "Turbo Flow TFG-S",
+          "manufacturer": "ГазМетрология",
+          "model": "Turbo Flow TFG-S",
+          "image": "equipment/Turbo Flow TFG-S.png",
+          "specs": {
+            "flowRange": "1,25-588000 м³/ч",
+            "pressureRange": "0,1-32 МПа",
+            "tempRange": "-60°C до +300°C",
+            "ambientTempRange": "-60°C до +70°C",
+            "accuracy": "1-2,5%",
+            "diameter": "50–1400 мм"
+          },
+          "flowCalculation": {
+            "formula": "Q = K * (DN/100)^2 * (P/0.101325)",
+            "minFlowCoef": 5,
+            "maxFlowCoef": 3000,
+            "standardDNs": [50, 65, 80, 100, 150, 200, 250, 300, 350, 400, 500, 600, 700, 800, 900, 1000, 1200, 1400]
+          },
+          "params": {
+            "pressure": "p-high",
+            "temperature": "t-high",
+            "flow": "q-high",
+            "accuracy": "acc-medium"
+          }
+        },
+        {
+          "id": "tfgh1",
+          "name": "Turbo Flow TFG-H",
+          "manufacturer": "ГазМетрология",
+          "model": "Turbo Flow TFG-H",
+          "image": "equipment/Turbo Flow TFG-H.png",
+          "specs": {
+            "flowRange": "0,05-1200 м³/ч",
+            "pressureRange": "0,1-32 МПа",
+            "tempRange": "-60°C до +70°C",
+            "ambientTempRange": "-60°C до +70°C",
+            "accuracy": "1-2,5%",
+            "diameter": "25–100 мм"
+          },
+          "flowCalculation": {
+            "formula": "Q = K * (DN/100)^2 * (P/0.101325)",
+            "minFlowCoef": 0.8,
+            "maxFlowCoef": 1200,
+            "standardDNs": [25, 32, 40, 50, 65, 80, 100]
+          },
+          "params": {
+            "pressure": "p-high",
+            "temperature": "t-high",
+            "flow": "q-high",
+            "accuracy": "acc-medium"
+          }
+        },
+        {
+          "id": "ufgfc1",
+          "name": "Turbo Flow UFG-F-C",
+          "manufacturer": "ГазМетрология",
+          "model": "Turbo Flow UFG-F-C",
+          "image": "equipment/Turbo Flow UFG-F-C.png",
+          "specs": {
+        "flowRange": "0,1-1100 м³/ч",
+            "pressureRange": "0,0025-1,6 МПа",
+            "tempRange": "-50°C до +70°C",
+            "ambientTempRange": "-60°C до +70°C",
+            "accuracy": "1-2%",
+            "diameter": "50–100 мм"
+          },
+          "params": {
+            "pressure": "p-medium",
+            "temperature": "t-medium",
+            "flow": "q-high",
+            "accuracy": "acc-medium"
+          }
+        },
+        {
+          "id": "gfg2",
+      "name": "Turbo Flow GFG",
+          "manufacturer": "ГазМетрология",
+          "model": "Turbo Flow GFG",
+          "image": "equipment/Turbo Flow GFG.png",
+          "specs": {
+            "flowRange": "0,016-280000 м³/ч",
+            "pressureRange": "0-32 МПа",
+            "tempRange": "-50°C до +70°C",
+            "ambientTempRange": "-50°C до +70°C",
+            "accuracy": "1-1,5%",
+            "diameter": "10–1400 мм"
+          },
+          "params": {
+            "pressure": "p-high",
+            "temperature": "t-medium",
+            "flow": "q-high",
+            "accuracy": "acc-medium"
+          }
+    },
+      {
+        "id": "ufgh1",
+      "name": "Turbo Flow UFG-H",
+        "manufacturer": "ГазМетрология",
+        "model": "Turbo Flow UFG-H",
+        "image": "equipment/Turbo Flow UFG-H.png",
+        "specs": {
+          "flowRange": "0,016-1600 м³/ч",
+          "pressureRange": "0,0025-0,5 МПа",
+          "tempRange": "-50°C до +70°C",
+          "ambientTempRange": "-40°C до +70°C",
+          "accuracy": "1-3%",
+          "diameter": "15–100 мм"
+        },
+        "params": {
+          "pressure": "p-low",
+          "temperature": "t-medium",
+          "flow": "q-high",
+          "accuracy": "acc-medium"
+        }
+      }
+  ],
+  "liquid": [
+      {
+        "id": "cfm1",
+        "name": "Расходомер Turbo Flow CFM",
+        "manufacturer": "ГазМетрология",
+        "model": "Turbo Flow CFM",
+        "image": "equipment/Turbo_Flow_CFM.png",
+        "specs": {
+          "flowRange": "0,15-2738,46 м³/ч",
+          "massFlowRange": "0.3–1780 т/ч",
+          "massFlowRangesByDN": {
+            "DN 15": "0.3–3",
+            "DN 25": "1.2–12",
+            "DN 40": "3–30",
+            "DN 50": "6–60",
+            "DN 80": "18–180",
+            "DN 100": "26–260",
+            "DN 150": "48–480",
+            "DN 200": "74–740",
+            "DN 250": "100–1000",
+            "DN 300": "178–1780"
+          },
+          "pressureRange": "0,0025-25 МПа",
+          "tempRange": "-200°C до +300°C",
+          "ambientTempRange": "-50°C до +60°C",
+          "accuracy": "0,1-5%",
+          "densityRange": "650-2000 кг/м³",
+          "diameter": "10–300 мм"
+        },
+        "params": {
+          "pressure": "p-high",
+          "temperature": "t-high",
+          "flow": "q-high",
+          "accuracy": "acc-high"
+        }
+      },
+      {
+        "id": "ufl1",
+        "name": "Расходомер Turbo Flow UFL",
+        "manufacturer": "ГазМетрология",
+        "model": "Turbo Flow UFL",
+        "image": "equipment/Turbo Flow UFL.png",
+        "specs": {
+          "flowRange": "0,11-144764,58 м³/ч",
+          "pressureRange": "0-45 МПа",
+          "tempRange": "-45°C до +320°C",
+          "ambientTempRange": "-60°C до +70°C",
+          "accuracy": "0,3-3%",
+          "densityRange": "400-1500 кг/м³",
+          "diameter": "25–1600 мм"
+        },
+        "flowCalculation": {
+          "formula": "Q = V * (π * (DN / 1000)²) / 4 * 3600",
+          "minVelocity": 0.0625,
+          "maxVelocity": 20,
+          "standardDNs": [25, 32, 40, 50, 65, 80, 100, 125, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600]
+        },
+        "params": {
+          "pressure": "p-high",
+          "temperature": "t-high",
+          "flow": "q-high",
+          "accuracy": "acc-high"
+        }
+      }
+  ],
+  "densitometer": [
+    {
+      "id": "udm1",
+      "name": "Turbo Flow UDM",
+      "manufacturer": "ГазМетрология",
+      "model": "Turbo Flow UDM",
+      "image": "equipment/Turbo Flow UDM.png",
+      "specs": {
+        "densityRange": "0,14-350 кг/м³",
+        "pressureRange": "0,1-32 МПа",
+        "tempRange": "-40°C до +70°C",
+        "ambientTempRange": "-50°C до +80°C",
+        "accuracy": "0,1-5%",
+        "diameterRange": "80-1400 мм"
+      },
+      "params": {
+        "pressure": "p-high",
+        "temperature": "t-medium",
+        "accuracy": "acc-high"
+  }
+}
+  ]
+}

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Шаг 3: Тип газа</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <style>
+    /* === СТИЛИ ДЛЯ КАРТОЧЕК ВЫБОРА ТИПА ГАЗА === */
+    .cards-container-gas {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 30px;
+      margin-top: 40px;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    
+    .card-gas {
+      position: relative;
+      background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+      border: 2px solid #e0e0e0;
+      border-radius: 20px;
+      padding: 40px 30px;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      overflow: hidden;
+      min-height: 280px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .card-gas::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(74, 144, 226, 0.05) 0%, rgba(53, 122, 189, 0.05) 100%);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      border-radius: 18px;
+    }
+    
+    .card-gas:hover {
+      transform: translateY(-8px) scale(1.02);
+      border-color: #4a90e2;
+      box-shadow: 0 12px 35px rgba(74, 144, 226, 0.25);
+    }
+    
+    .card-gas:hover::before {
+      opacity: 1;
+    }
+    
+    .card-gas:active {
+      transform: translateY(-4px) scale(1.01);
+    }
+    
+    .card-icon-wrapper-gas {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 25px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .card-icon-gas {
+      position: relative;
+      font-size: 64px;
+      z-index: 2;
+      transition: all 0.4s ease;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+    }
+    
+    .card-gas:hover .card-icon-gas {
+      transform: scale(1.15) rotate(5deg);
+      filter: drop-shadow(0 8px 16px rgba(74, 144, 226, 0.3));
+    }
+    
+    .card-glow-gas {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      opacity: 0;
+      transition: all 0.4s ease;
+      z-index: 1;
+    }
+    
+    .card-glow-natural {
+      background: radial-gradient(circle, rgba(74, 144, 226, 0.3) 0%, transparent 70%);
+    }
+    
+    .card-glow-process {
+      background: radial-gradient(circle, rgba(52, 152, 219, 0.3) 0%, transparent 70%);
+    }
+    
+    .card-gas:hover .card-glow-gas {
+      opacity: 1;
+      width: 140px;
+      height: 140px;
+    }
+    
+    .card-content-gas {
+      text-align: center;
+      position: relative;
+      z-index: 2;
+    }
+    
+    .card-title-gas {
+      font-size: 28px;
+      font-weight: 700;
+      color: #2c3e50;
+      margin-bottom: 12px;
+      transition: color 0.3s ease;
+    }
+    
+    .card-gas:hover .card-title-gas {
+      color: #4a90e2;
+    }
+    
+    .card-description-gas {
+      font-size: 15px;
+      color: #6c757d;
+      line-height: 1.6;
+      transition: color 0.3s ease;
+    }
+    
+    .card-gas:hover .card-description-gas {
+      color: #5a6c7d;
+    }
+    
+    .card-arrow-gas {
+      position: absolute;
+      bottom: 20px;
+      right: 25px;
+      font-size: 28px;
+      color: #4a90e2;
+      opacity: 0;
+      transform: translateX(-10px);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .card-gas:hover .card-arrow-gas {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    
+    /* Специфичные цвета для типов */
+    .card-gas[data-gas-type="natural"]:hover {
+      border-color: #4a90e2;
+    }
+    
+    .card-gas[data-gas-type="process"]:hover {
+      border-color: #3498db;
+    }
+    
+    .card-gas[data-gas-type="process"]:hover .card-title-gas {
+      color: #3498db;
+    }
+    
+    .card-gas[data-gas-type="process"]:hover .card-arrow-gas {
+      color: #3498db;
+    }
+    
+    /* Кнопка "Назад" */
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 28px;
+      background: #f8f9fa;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      color: #2c3e50;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 40px;
+    }
+    
+    .btn-back:hover {
+      background: #e9ecef;
+      border-color: #4a90e2;
+      color: #4a90e2;
+      transform: translateX(-5px);
+    }
+    
+    .btn-back .arrow-left {
+      display: inline-block;
+      transition: transform 0.3s ease;
+    }
+    
+    .btn-back:hover .arrow-left {
+      transform: translateX(-3px);
+    }
+    
+    /* Адаптивность */
+    @media (max-width: 768px) {
+      .cards-container-gas {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+      
+      .card-gas {
+        padding: 30px 20px;
+        min-height: 240px;
+      }
+      
+      .card-icon-wrapper-gas {
+        width: 100px;
+        height: 100px;
+      }
+      
+      .card-icon-gas {
+        font-size: 52px;
+      }
+      
+      .card-title-gas {
+        font-size: 24px;
+      }
+      
+      .card-description-gas {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="step-title">Шаг 3: Тип газа</h1>
+    <p class="step-description">Выберите тип газа, с которым будет работать оборудование.</p>
+
+    <div class="cards-container-gas">
+      <div class="card card-gas" data-gas-type="natural">
+        <div class="card-icon-wrapper-gas">
+          <div class="card-icon-gas">
+            🔥
+          </div>
+          <div class="card-glow-gas card-glow-natural"></div>
+        </div>
+        <div class="card-content-gas">
+          <div class="card-title-gas">Природный газ</div>
+          <div class="card-description-gas">Измерение природного газа для коммунальных и промышленных нужд</div>
+        </div>
+        <div class="card-arrow-gas">→</div>
+      </div>
+      
+      <div class="card card-gas" data-gas-type="process">
+        <div class="card-icon-wrapper-gas">
+          <div class="card-icon-gas">
+            ⚗️
+          </div>
+          <div class="card-glow-gas card-glow-process"></div>
+        </div>
+        <div class="card-content-gas">
+          <div class="card-title-gas">Технологический газ</div>
+          <div class="card-description-gas">Измерение специальных газов в технологических процессах</div>
+        </div>
+        <div class="card-arrow-gas">→</div>
+      </div>
+    </div>
+
+    <button id="back-btn-page" class="btn-back">
+      <span class="arrow-left">←</span>
+      <span>Назад</span>
+    </button>
+  </div>
+  <script>
+    (function(){
+      const params = new URLSearchParams(window.location.search);
+      document.body.dataset.medium = params.get('medium') || 'gas';
+      document.body.dataset.application = params.get('application') || '';
+    })();
+  </script>
+  <script src="/static/js/app.js?v=20250901113600"></script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Выбор типа оборудования</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: #4a90e2;
+            box-shadow: 0 4px 16px rgba(74, 144, 226, 0.3);
+        }
+        
+        .card-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .card-description {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="step-title">Шаг 1: Выбор типа оборудования</h1>
+        
+        <p class="step-description">
+            Выберите тип оборудования, которое вам необходимо подобрать
+        </p>
+        
+        <div class="cards-container">
+            <div class="card" data-equipment-type="flowmeters">
+                <div class="card-icon"><img src="/static/images/rashodomerchiki.png" alt="Расходомеры" style="width: 32px; height: 32px;"></div>
+                <div class="card-title">Расходомеры</div>
+                <div class="card-description">Приборы для измерения расхода газа и жидкости</div>
+            </div>
+            
+            <div class="card" data-equipment-type="verification">
+                <div class="card-icon"><img src="/static/images/poverkaik.png" alt="Поверочные установки" style="width: 32px; height: 32px;"></div>
+                <div class="card-title">Поверочные установки</div>
+                <div class="card-description">Оборудование для поверки и калибровки приборов</div>
+            </div>
+            
+            <div class="card" data-equipment-type="modular">
+                <div class="card-icon">🏗️</div>
+                <div class="card-title">Блочно-модульные изделия</div>
+                <div class="card-description">Готовые модульные решения для измерений</div>
+            </div>
+            
+            <div class="card" data-equipment-type="household">
+                <div class="card-icon"><img src="/static/images/grand.png" alt="Бытовые счётчики газа" style="width: 32px; height: 32px;"></div>
+                <div class="card-title">Бытовые счётчики газа</div>
+                <div class="card-description">Счётчики для бытового использования</div>
+            </div>
+            
+            <div class="card" data-equipment-type="pressure">
+                <div class="card-icon"><img src="/static/images/dd.png" alt="Датчики давления" style="width: 32px; height: 32px;"></div>
+                <div class="card-title">Датчики давления</div>
+                <div class="card-description">Приборы для измерения давления</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Обработка клика по карточкам
+        document.addEventListener('click', (e) => {
+            const card = e.target.closest('.card[data-equipment-type]');
+            if (!card) return;
+            
+            const equipmentType = card.getAttribute('data-equipment-type');
+            
+            // Переход на следующий шаг с параметром типа оборудования
+            window.location.href = `/medium?equipment_type=${encodeURIComponent(equipmentType)}`;
+        });
+    </script>
+</body>
+</html>
+
+
+
+

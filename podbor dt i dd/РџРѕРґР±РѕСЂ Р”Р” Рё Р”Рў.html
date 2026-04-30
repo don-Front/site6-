@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Подбор датчиков давления Turbo Flow-PS-BP-10</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Подбор ДД и ДТ</h1>
+        </header>
+
+        <div class="tabs">
+            <div class="tab-list" role="tablist">
+                <button class="tab active" role="tab" aria-selected="true" aria-controls="tab-ps" id="tab-btn-ps">Подбор ДИ и ДА</button>
+                <button class="tab" role="tab" aria-selected="false" aria-controls="tab-other" id="tab-btn-other">Подбор и расчёт датчиков перепада давления</button>
+                <button class="tab" role="tab" aria-selected="false" aria-controls="tab-ts" id="tab-btn-ts">Датчики температуры (ДТ)</button>
+            </div>
+
+        </div>
+
+        <div class="main-content">
+            <div class="form-section tab-panel active" id="tab-ps" role="tabpanel" aria-labelledby="tab-btn-ps">
+                <h3>Параметры</h3>
+                
+                <!-- Блок для отображения общих ошибок валидации -->
+                <div id="validation-summary" class="validation-summary">
+                    <div class="summary-title">Обнаружены ошибки в заполнении формы:</div>
+                    <ul id="validation-errors"></ul>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pressure-range">Тип преобразователя давления:</label>
+                    <select id="pressure-range" name="pressure-range">
+                        <option value="">Выбрать тип преобразователя</option>
+                        <option value="excess">Избыточный (-100…40000 кПа)</option>
+                        <option value="absolute">Абсолютный (0…40000 кПа)</option>
+                    </select>
+                    <span id="pressure-range-error" class="error-message hidden"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="pressure-range-input">Диапазон рабочего давления (кПа):</label>
+                    <div class="input-range">
+                    <input type="text" inputmode="decimal" pattern="-?[0-9]*[\.,]?[0-9]*" id="min-pressure" name="min-pressure" placeholder="Мин">
+                        <span class="range-separator">—</span>
+                    <input type="text" inputmode="decimal" pattern="-?[0-9]*[\.,]?[0-9]*" id="max-pressure" name="max-pressure" placeholder="Макс">
+                    </div>
+                    <span id="min-pressure-error" class="error-message hidden"></span>
+                    <span id="max-pressure-error" class="error-message hidden"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="accuracy">Предел допускаемой основной погрешности (%):</label>
+                    <select id="accuracy" name="accuracy">
+                        <option value="">Выберите точность</option>
+                        <option value="0.075">±0.075</option>
+                        <option value="0.1">±0.1</option>
+                        <option value="0.15">±0.15</option>
+                        <option value="0.25">±0.25</option>
+                        <option value="0.5">±0.5</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="explosion-protection">Исполнение взрывозащиты:</label>
+                    <select id="explosion-protection" name="explosion-protection">
+                        <option value="">Выберите исполнение</option>
+                        <option value="Exi">Exi – взрывозащищенное исполнение с искробезопасной цепью</option>
+                        <option value="Exd">Exd – исполнение с видом взрывозащиты «взрывонепроницаемая оболочка d» с внешними искробезопасными цепями</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="temperature-range">Диапазон температур окружающей среды:</label>
+                    <select id="temperature-range" name="temperature-range">
+                        <option value="">Выберите диапазон</option>
+                        <option value="M">М – от минус 30 °С до плюс 80 °С</option>
+                        <option value="X">Х – от минус 50 °С до плюс 85 °С</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="power-type">Тип напряжения питания:</label>
+                    <select id="power-type" name="power-type">
+                        <option value="">Выберите тип питания</option>
+                        <option value="A">А – автономное</option>
+                        <option value="B">В – внешнее</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="indicator">Встроенный индикатор (ЖКИ):</label>
+                    <select id="indicator" name="indicator">
+                        <option value="">Выберите наличие индикатора</option>
+                        <option value="И">И – с индикатором</option>
+                        <option value="0">0 – отсутствует</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="output-signal">Тип выходного сигнала:</label>
+                    <select id="output-signal" name="output-signal">
+                        <option value="">Выберите тип сигнала</option>
+                        <option value="Т">Т – 4-20 mA (токовый, только исполнение с внешним питанием)</option>
+                        <option value="П">П – 0,4-2,0 В (потенциальный)</option>
+                        <option value="Ц">Ц – RS-485 (цифровой)</option>
+                        <option value="М">М – 4-20 мА с HART-модемом</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="measured-medium">Измеряемая среда:</label>
+                    <select id="measured-medium" name="measured-medium">
+                        <option value="">Выберите среду</option>
+                        <option value="G">G – газ</option>
+                        <option value="Н">H – жидкость</option>
+                        <option value="S">S – пар</option>
+                    </select>
+                </div>
+
+                <button type="button" id="find-sensors" class="btn-primary">Подобрать маску</button>
+                <button type="button" id="clear-form" class="btn-secondary">Очистить форму</button>
+            </div>
+
+            <div class="results-section tab-panel active" id="tab-ps-results" role="tabpanel" aria-labelledby="tab-btn-ps">
+                <h3>Результаты подбора</h3>
+                <div id="results-container">
+                    <p class="no-results">Выберите параметры и нажмите "Найти подходящие датчики"</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Вкладка: другой тип датчиков -->
+        <div class="main-content tab-panel" id="tab-other" role="tabpanel" aria-labelledby="tab-btn-other" hidden>
+            <div class="form-section">
+                <h3>Параметры</h3>
+                <div class="form-group">
+                    <label for="dp-dn">DN - условный проход трубопровода, мм:</label>
+                    <input type="text" inputmode="decimal" pattern="-?[0-9]*[\.,]?[0-9]*" id="dp-dn" placeholder="например, 600" />
+                </div>
+                <div class="form-group">
+                    <label for="dp-xi">ξ - коэффициент гидравлического сопротивления УФП:</label>
+                    <input type="text" inputmode="decimal" pattern="-?[0-9]*[\.,]?[0-9]*" id="dp-xi" placeholder="например, 3.1" />
+                </div>
+
+                <div class="form-group">
+                    <label for="dp-pmax">Ризб min – минимальное избыточное давление, МПа:</label>
+                    <input type="text" inputmode="decimal" pattern="-?[0-9]*[\.,]?[0-9]*" id="dp-pmax" placeholder="например, 10" />
+                </div>
+                <div class="form-group">
+                    <label for="dp-tmin">Тизм.среды max – максимальная температура среды, ⁰С:</label>
+                    <input type="text" inputmode="decimal" pattern="-?[0-9]*[\.,]?[0-9]*" id="dp-tmin" placeholder="например, -20" />
+                </div>
+                <div class="form-group">
+                    <label for="dp-rho">Плотность газа при стандартных условиях, кг/м³:</label>
+                    <input type="text" inputmode="decimal" pattern="-?[0-9]*[\.,]?[0-9]*" id="dp-rho" placeholder="например, 0,700" value="0,700" />
+                </div>
+                <div class="form-group">
+                    <label for="dp-qmax">q max раб. - максимальный расход газа в условиях эксплуатации, м³/ч:</label>
+                    <input type="text" inputmode="decimal" pattern="-?[0-9]*[\.,]?[0-9]*" id="dp-qmax" placeholder="например, 1500" />
+                </div>
+                <button type="button" class="btn-primary" id="dp-calc">Расчитать</button>
+            </div>
+            <div class="results-section">
+                <h3>Расчёт ВПИ</h3>
+                <div id="other-results-container">
+                <div class="sensor-specs">
+                    <div class="spec-item"><span class="spec-label">ρраб по Pmax,Tmax (кг/м³):</span> <span id="dp-rho-work-max">—</span></div>
+                    <div class="spec-item"><span class="spec-label">W (скорость потока), м/с:</span> <span id="dp-wmax">—</span></div>
+                    <div class="spec-item"><span class="spec-label">Δω (Па):</span> <span id="dp-domega-max-pa">—</span></div>
+                    <div class="spec-item"><span class="spec-label">Δω (кПа):</span> <span id="dp-domega-max-kpa">—</span></div>
+                    <div class="spec-item"><span class="spec-label">Δω (МПа):</span> <span id="dp-domega-max-mpa">—</span></div>
+                    <div class="spec-item"><span class="spec-label">ΔPв ≥ 1,5·Δωmax (Па):</span> <span id="dp-pvpi-pa">—</span></div>
+                    </div>
+                </div>
+                
+                <h3>Проверка точности</h3>
+                <div class="form-group">
+                    <label for="dp-gamma">γ - Предел допускаемой основной приведенной погрешности, %:</label>
+                    <select id="dp-gamma">
+                        <option value="">Выберите значение</option>
+                        <option value="0.075">±0,075</option>
+                        <option value="0.1">±0,1</option>
+                        <option value="0.15">±0,15</option>
+                        <option value="0.25">±0,25</option>
+                        <option value="0.5">±0,5</option>
+                    </select>
+                </div>
+                <div class="sensor-specs">
+                    <div class="spec-item"><span class="spec-label">Минимальный ВПИ (1,5×Δωmax), кПа:</span> <span id="dp-min-vpi-kpa">—</span></div>
+                    <div class="spec-item"><span class="spec-label">Выбранный ВПИ датчика, кПа:</span> <span id="dp-selected-vpi-kpa">—</span></div>
+                    <div class="spec-item"><span class="spec-label">Рабочее давление датчика, МПа:</span> <span id="dp-working-pressure">—</span></div>
+                    <div class="spec-item"><span class="spec-label">Относительная погрешность U, %:</span> <span id="dp-accuracy-u">—</span></div>
+                    <div class="spec-item accuracy-check-inline"><span class="spec-label">Проверка точности:</span> <span id="dp-accuracy-check">—</span></div>
+                    <!-- Маска датчика убрана по требованию пользователя -->
+                    <!-- <div class="spec-item"><span class="spec-label">Маска датчика:</span> <span id="dp-sensor-mask">—</span></div> -->
+                </div>
+
+            </div>
+
+            <!-- Отдельная секция маски модели датчика -->
+            <div class="mask-section">
+                <h3>Маска модели датчика</h3>
+                <div class="mask-display">
+                    <div class="generated-mask">
+                        <label>Сформированная маска:</label>
+                        <div id="generated-mask-display">Turbo Flow-PS–BP-XX–XXX–XX–X,XXX–XXX–X–X–X–X–X–X–X</div>
+                    </div>
+                </div>
+                
+                <div class="mask-parameters">
+
+                    
+                    <div class="parameter-row">
+                        
+                        <div class="parameter-item">
+                            <span class="param-number">1</span>
+                            <label>Исполнение взрывозащиты</label>
+                            <select id="mask-explosion-protection">
+                                <option value="">Выберите</option>
+                                <option value="Exi">Exi – взрывозащищенное исполнение с искробезопасной цепью</option>
+                                <option value="Exd">Exd – исполнение с видом взрывозащиты «взрывонепроницаемая оболочка d» с внешними искробезопасными цепями</option>
+                            </select>
+                        </div>
+                        
+                        <div class="parameter-item">
+                            <span class="param-number">2</span>
+                            <label>Диапазон температур окружающей среды</label>
+                            <select id="mask-temperature-range">
+                                <option value="">Выберите</option>
+                                <option value="M">М (от минус 30 °С до плюс 80 °С)</option>
+                                <option value="X">Х (от минус 50 °С до плюс 85 °С)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="parameter-row">
+                        <div class="parameter-item">
+                            <span class="param-number">3</span>
+                            <label>Тип напряжения питания</label>
+                            <select id="mask-power-type">
+                                <option value="">Выберите</option>
+                                <option value="A">А (автономное)</option>
+                                <option value="B">В (внешнее)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="parameter-item">
+                            <span class="param-number">4</span>
+                            <label>Встроенный индикатор (ЖКИ)</label>
+                            <select id="mask-indicator">
+                                <option value="">Выберите</option>
+                                <option value="И">И (с индикатором)</option>
+                                <option value="0">0 (отсутствует)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="parameter-item">
+                            <span class="param-number">5</span>
+                            <label>Тип выходного сигнала</label>
+                            <select id="mask-output-signal">
+                                <option value="">Выберите</option>
+                                <option value="Т">Т (4-20 mA, токовый, только исполнение с внешним питанием)</option>
+                                <option value="П">П (0,4-2,0 В, потенциальный)</option>
+                                <option value="Ц">Ц (RS-485, цифровой)</option>
+                                <option value="М">М (4-20 мА с HART-модемом)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="parameter-row">
+                        <div class="parameter-item">
+                            <span class="param-number">6</span>
+                            <label>Измеряемая среда</label>
+                            <select id="mask-measured-medium">
+                                <option value="">Выберите</option>
+                                <option value="G">G (газ)</option>
+                                <option value="Н">H (жидкость)</option>
+                                <option value="S">S (пар)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="validation-errors" id="mask-validation-errors"></div>
+            </div>
+        </div>
+
+        <!-- Вкладка: датчики температуры (TS) -->
+        <div class="main-content tab-panel" id="tab-ts" role="tabpanel" aria-labelledby="tab-btn-ts" hidden>
+            <div class="form-section">
+                <h3>Параметры</h3>
+                <div class="form-group">
+                    <label for="ts-dn">Dn (номинальный диаметр, мм):</label>
+                    <input type="text" inputmode="decimal" pattern="-?[0-9]*[\.,]?[0-9]*" id="ts-dn" placeholder="например, 125" />
+                </div>
+                <div class="form-group">
+                    <label for="ts-pressure">Давление (МПа):</label>
+                    <input type="text" inputmode="decimal" pattern="-?[0-9]*[\.,]?[0-9]*" id="ts-pressure" placeholder="например, 1.6" />
+                </div>
+
+                <button type="button" id="ts-find-sensors" class="btn-primary">Подобрать ДТ</button>
+                <button type="button" id="ts-clear-form" class="btn-secondary">Очистить форму</button>
+            </div>
+
+            <div class="results-section" id="tab-ts-results">
+                <h3>Результаты подбора</h3>
+                <div id="ts-results-container">
+                    <p class="no-results">Выберите параметры и нажмите "Подобрать ДТ"</p>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
