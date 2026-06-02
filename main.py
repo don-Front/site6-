@@ -5,8 +5,8 @@ from fastapi.responses import HTMLResponse, JSONResponse, FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import AliasChoices, BaseModel, ConfigDict, Field, ValidationError
-from typing import Optional, Dict, Any, List
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, ValidationError, model_validator
+from typing import Optional, Dict, Any, List, Literal
 import json
 import os
 import sys
@@ -19,6 +19,7 @@ import math
 import uuid
 import asyncio
 import tempfile
+from urllib.parse import quote
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import Depends, HTTPException, status
 import httpx
@@ -60,6 +61,28 @@ if sys.platform == 'win32':
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def load_local_env() -> None:
+    """Минимальная загрузка .env для локального запуска без внешних зависимостей."""
+    env_path = Path(__file__).resolve().parent / ".env"
+    if not env_path.is_file():
+        return
+    try:
+        for raw in env_path.read_text(encoding="utf-8-sig").splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = value
+    except Exception as exc:
+        logger.warning("Не удалось прочитать .env: %s", exc)
+
+
+load_local_env()
 
 # Хранилище кодов верификации email (в памяти)
 # Формат: {email: {"code": "123456", "expires": timestamp, "verified": False}}
@@ -167,12 +190,18 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://192.168.5.96:3000",   # внешняя система, шлёт данные по API
+        "http://192.168.2.17:3000",   # локальный фронтенд по сетевому IP
+        "http://192.168.2.41:3000",   # локальный фронтенд по текущему сетевому IP
         "http://192.168.2.127:8000",  # этот же сервер (локальные тесты)
         "http://localhost:8000",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:8000",
     ],
+    # Любой хост во внутренних подсетях (CRA / другие клиенты по IP:порт из LAN)
+    allow_origin_regex=(
+        r"^http://(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3})(:\d+)?$"
+    ),
     allow_credentials=True,
     allow_methods=["*"],  # Разрешить все HTTP методы
     allow_headers=["*"],  # Разрешить все заголовки
@@ -202,6 +231,9 @@ EQUIPMENT_ID_TO_PRICE_FILENAME: Dict[str, str] = {
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
 
+# Картинки из data.json: поле вида «equipment/foo.png» → файл на диске static/equipment/foo.png
+# и то же самое использует SPA: image_url = /static/{image}
+os.makedirs(os.path.join(STATIC_DIR, "equipment"), exist_ok=True)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
@@ -894,6 +926,62 @@ async def health_check():
                 "error": str(e)
             }
         }
+
+
+# Прайс бытовых счётчиков газа «Гранд» (синхронизировать с templates/index.html → grandPriceData)
+GRAND_GAS_METER_PRICES_ITEMS: List[Dict[str, Any]] = [
+    {"name": 'Счётчик газа Гранд 1.6 1/2" РОССИЯ', "price": 1800},
+    {"name": 'Счётчик газа Гранд 1.6 ТК 1/2" РОССИЯ', "price": 2000},
+    {"name": 'Счётчик газа Гранд 3.2 1/2" РОССИЯ', "price": 1900},
+    {"name": 'Счётчик газа Гранд 3.2 ТК 1/2" РОССИЯ', "price": 2100},
+    {"name": 'Счётчик газа Гранд 4 3/4" РОССИЯ', "price": 4100},
+    {"name": 'Счётчик газа Гранд 4 1" РОССИЯ', "price": 4400},
+    {"name": 'Счётчик газа Гранд 4 1 1/4" РОССИЯ', "price": 4500},
+    {"name": 'Счётчик газа Гранд 4 3/4"×154 мм РОССИЯ', "price": 3000},
+    {"name": 'Счётчик газа Гранд 4 Б/К 3/4" РОССИЯ', "price": 2300},
+    {"name": 'Счётчик газа Гранд 4 ТК 3/4" РОССИЯ', "price": 4200},
+    {"name": 'Счётчик газа Гранд 4 ТК 1" РОССИЯ', "price": 4500},
+    {"name": 'Счётчик газа Гранд 4 ТК 1 1/4" РОССИЯ', "price": 4600},
+    {"name": 'Счётчик газа Гранд 4 ТК 3/4"×154 мм РОССИЯ', "price": 3000},
+    {"name": 'Счётчик газа Гранд 4 Б/К ТК 3/4" РОССИЯ', "price": 2400},
+    {"name": 'Счётчик газа Гранд 6 Б/К 3/4" РОССИЯ', "price": 2300},
+    {"name": 'Счётчик газа Гранд 6 ТК 3/4" РОССИЯ', "price": 2700},
+    {"name": 'Счётчик газа Гранд 6 ТК 1" РОССИЯ', "price": 4600},
+    {"name": 'Счётчик газа Гранд 6 ТК 1 1/4" РОССИЯ', "price": 4600},
+    {"name": 'Счётчик газа Гранд 6 ТК 3/4" РОССИЯ', "price": 4300},
+    {"name": 'Счётчик газа Гранд 6 ТК 3/4"×154 мм РОССИЯ', "price": 3600},
+    {"name": 'Счётчик газа Гранд 10 ТК 1" РОССИЯ', "price": 4500},
+    {"name": 'Счётчик газа Гранд 10 ТК 1 1/4" РОССИЯ', "price": 4600},
+    {"name": 'Счётчик газа Гранд 16 ТК 2" РОССИЯ', "price": 7100},
+    {"name": 'Счётчик газа Гранд 25 ТК 2" РОССИЯ', "price": 8000},
+    {"name": 'Счётчик газа Гранд 4 ТК М 3/4" РОССИЯ', "price": 5500},
+    {"name": 'Счётчик газа Гранд 4 ТК М 1" РОССИЯ', "price": 5500},
+    {"name": 'Счётчик газа Гранд 4 ТК М 1 1/4" РОССИЯ', "price": 5300},
+    {"name": 'Счётчик газа Гранд 4 ТК М 3/4"×154 мм РОССИЯ', "price": 5400},
+    {"name": 'Счётчик газа Гранд 6 ТК М 3/4" РОССИЯ', "price": 5700},
+    {"name": 'Счётчик газа Гранд 6 ТК М 1" РОССИЯ', "price": 6100},
+    {"name": 'Счётчик газа Гранд 6 ТК М 1 1/4" РОССИЯ', "price": 6100},
+    {"name": 'Счётчик газа Гранд 6 ТК М 3/4"×154 мм РОССИЯ', "price": 6000},
+    {"name": 'Счётчик газа Гранд 10 ТК М 1" РОССИЯ', "price": 6400},
+    {"name": 'Счётчик газа Гранд 10 ТК М 1 1/4" РОССИЯ', "price": 6400},
+    {"name": 'Счётчик газа Гранд 16 ТК М 2" РОССИЯ', "price": 5500},
+    {"name": 'Счётчик газа Гранд 25 ТК М 2" РОССИЯ', "price": 8500},
+]
+
+
+@app.get("/api/prices/grand-gas-meters", tags=["api"])
+@app.get("/api/prices/grand-gas-meters/", include_in_schema=False)
+async def api_grand_gas_meter_prices():
+    """
+    Прайс-лист счётчиков газа СГ Гранд: наименование и цена (₽, без НДС), как на сайте.
+    """
+    return {
+        "title": "Прайс-лист на СГ Гранд",
+        "subtitle": "Стоимость в рублях без НДС (0%)",
+        "currency": "RUB",
+        "count": len(GRAND_GAS_METER_PRICES_ITEMS),
+        "items": GRAND_GAS_METER_PRICES_ITEMS,
+    }
 
 
 @app.get("/api/estimate-price", tags=["api"])
@@ -2721,87 +2809,267 @@ async def submit_modular_request(
         )
 
 
-@app.post("/api/submit-spu-request")
-async def submit_spu_request(request: Request):
-    """Обработка заявки на поверочные установки СПУ с отправкой на email"""
-    try:
-        data = await request.json()
-        
-        equipment_type = data.get('equipment_type', 'spu')
-        equipment_name = data.get('equipment_name', '')
-        specifications = data.get('specifications', {})
-        fullname = data.get('fullname', '')
-        contact = data.get('contact', '')
-        comment = data.get('comment', '')
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        
-        logger.info(f"📋 Получена заявка на СПУ от {fullname} ({contact})")
-        logger.info(f"   Установка: {equipment_name}")
-        
-        # Сохраняем данные заявки в JSON
-        upload_dir = Path("received_data/spu_requests")
-        upload_dir.mkdir(parents=True, exist_ok=True)
-        
-        request_data = {
-            "timestamp": datetime.now().isoformat(),
-            "equipment_type": equipment_type,
-            "equipment_name": equipment_name,
-            "specifications": specifications,
-            "fullname": fullname,
-            "contact": contact,
-            "comment": comment
-        }
-        
-        json_file = upload_dir / f"spu_request_{timestamp}.json"
-        with open(json_file, "w", encoding="utf-8") as f:
-            json.dump(request_data, f, ensure_ascii=False, indent=2)
-        
-        logger.info(f"✅ Заявка сохранена: {json_file}")
-        
-        # Отправка email
-        email_sent = False
-        email_error = None
-        
-        try:
-            from email_config import (
-                SMTP_SERVER, SMTP_PORT, SENDER_EMAIL, SENDER_PASSWORD,
-                RECIPIENT_EMAIL, CC_EMAILS, SEND_EMAIL
+def _spu_absolute_url(request: Request, path: str) -> str:
+    if path.startswith("http://") or path.startswith("https://"):
+        return path
+    base = str(request.base_url).rstrip("/")
+    if not path.startswith("/"):
+        path = "/" + path
+    return base + path
+
+
+def _spu_fmt_num_ru(s: str) -> str:
+    return (s or "").strip().replace(".", ",")
+
+
+def _spu_flow_range_display(flow_range: str) -> str:
+    raw = (flow_range or "").strip()
+    if "-" in raw:
+        a, b = raw.split("-", 1)
+        return f"{_spu_fmt_num_ru(a)} — {_spu_fmt_num_ru(b)} м³/ч"
+    return raw
+
+
+def _spu_accuracy_display(accuracy: str) -> str:
+    a = (accuracy or "").strip()
+    if not a:
+        return "Не указана"
+    return f"±{_spu_fmt_num_ru(a)}%"
+
+
+_SPU3_FLOW = {"0.016-16", "0.25-25", "0.04-40", "0.1-100"}
+_SPU5_FLOW = {"0.03-25", "0.03-70"}
+_SPU5_POSTS = {"6", "10", "15", "23"}
+_SPU5_LINES = {"1", "2"}
+_SPU7_DIAM_NOZZLES = {15, 20, 25, 32, 40, 50, 80, 100, 150, 200}
+_SPU7_DIAM_MASTERS = _SPU7_DIAM_NOZZLES | {250}
+_SPU7_ACCURACY_NOZZLES = {"0.2", "0.25", "0.3"}
+
+
+class SpuCardRequest(BaseModel):
+    """Параметры карточки СПУ (ветка «Газ» на сайте). Все поля кроме meter_type / installation_type — по необходимости."""
+
+    model_config = ConfigDict(populate_by_name=True)
+    meter_type: Literal["domestic", "industrial"]
+    installation_type: Literal["stationary", "portable"]
+
+    flow_range: Optional[str] = None
+    pressure_limit: Optional[str] = None
+    accuracy: Optional[str] = None
+
+    posts: Optional[str] = None
+    lines: Optional[str] = None
+
+    modification: Optional[Literal["nozzles", "masters"]] = None
+    diameter: Optional[int] = None
+
+
+class SpuCardResponse(BaseModel):
+    name: str
+    type: str
+    modification: Optional[str] = None
+    diameter: Optional[str] = None
+    counters: str
+    flow_range: str
+    accuracy: str
+    image_path: str
+    image_url: str
+    equipment_key: Literal["spu3", "spu5", "spu7"]
+
+
+class SpuApplicationRequestJson(BaseModel):
+    """
+    Заявка на поверочную установку СПУ.
+    Либо `selection` (как POST /api/spu/card), либо готовые equipment_name + specifications.
+    """
+
+    fullname: str = Field(..., min_length=1)
+    contact: str = Field(..., min_length=1)
+    comment: str = ""
+    source: Optional[str] = Field(
+        default=None,
+        description="Метка внешней системы (бот, CRM и т.д.)",
+    )
+    equipment_name: Optional[str] = None
+    specifications: Optional[Dict[str, str]] = None
+    equipment_key: Optional[Literal["spu3", "spu5", "spu7"]] = None
+    selection: Optional[SpuCardRequest] = None
+
+    @model_validator(mode="after")
+    def equipment_or_selection(self) -> "SpuApplicationRequestJson":
+        if self.selection is None and (
+            not self.equipment_name or not self.specifications
+        ):
+            raise ValueError(
+                "Укажите selection (параметры подбора, как для POST /api/spu/card) "
+                "или пару equipment_name и specifications"
             )
-            
-            if SEND_EMAIL:
-                import smtplib
-                from email.mime.text import MIMEText
-                from email.mime.multipart import MIMEMultipart
-                
-                msg = MIMEMultipart()
-                msg['From'] = SENDER_EMAIL
-                msg['To'] = RECIPIENT_EMAIL
-                if CC_EMAILS:
-                    msg['Cc'] = ', '.join(CC_EMAILS)
-                
-                msg['Subject'] = f"🔧 Заявка на поверочную установку СПУ от {fullname}"
-                
-                # Формируем спецификации в текст
-                specs_text = "\n".join([f"  • {k}: {v}" for k, v in specifications.items()])
-                
-                body = f"""
-Новая заявка на поверочную установку СПУ!
+        return self
 
-══════════════════════════════════════════
-📋 ДАННЫЕ УСТАНОВКИ
-══════════════════════════════════════════
-Название: {equipment_name}
 
-Характеристики:
-{specs_text}
+class HouseholdGasMeterItem(BaseModel):
+    name: str = Field(..., min_length=1)
+    price: int = Field(..., ge=0)
+    quantity: int = Field(default=1, ge=1)
+
+
+class HouseholdGasMeterRequestJson(BaseModel):
+    """Тело JSON для заявки с внешнего проекта (файл ТЗ через JSON не передаётся)."""
+    fullname: str = Field(..., min_length=1)
+    contact: str = Field(..., min_length=1)
+    comment: str = ""
+    organization: Optional[str] = None
+    position: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    selected_items: Optional[List[HouseholdGasMeterItem]] = None
+    source: Optional[str] = Field(
+        default=None,
+        description="Метка внешней системы (бот, CRM и т.д.)",
+    )
+
+
+def _format_request_extra_for_email(extra: Dict[str, Any]) -> str:
+    if not extra:
+        return ""
+    lines: List[str] = ["", "══════════════════════════════════════════", "📋 ДОПОЛНИТЕЛЬНО", "══════════════════════════════════════════"]
+    for key, value in extra.items():
+        if value is None or value == "" or value == []:
+            continue
+        if key == "selected_items" and isinstance(value, list):
+            lines.append("Позиции из прайса:")
+            for i, item in enumerate(value, 1):
+                if isinstance(item, dict):
+                    name = item.get("name", "")
+                    price = item.get("price", "")
+                    qty = item.get("quantity", 1)
+                    lines.append(f"  {i}. {name} — {price} ₽ × {qty}")
+                else:
+                    lines.append(f"  {i}. {item}")
+            continue
+        label = key.replace("_", " ").capitalize()
+        lines.append(f"{label}: {value}")
+    return "\n".join(lines)
+
+
+async def _submit_simple_contact_request(
+    *,
+    equipment_type: str,
+    equipment_name: str,
+    storage_subdir: str,
+    json_filename_prefix: str,
+    email_subject: str,
+    email_route_key: str,
+    fullname: str,
+    contact: str,
+    comment: str,
+    tz_file: Optional[UploadFile],
+    extra_data: Optional[Dict[str, Any]] = None,
+) -> JSONResponse:
+    """Сохранение заявки (JSON + опциональный файл) и отправка email по образцу verification-liquid."""
+    fullname_clean = fullname.strip()
+    contact_clean = contact.strip()
+    comment_clean = (comment or "").strip()
+    if not fullname_clean or not contact_clean:
+        return JSONResponse(
+            status_code=400,
+            content={"status": "error", "message": "Укажите ФИО и контакт (email или телефон)."},
+        )
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    upload_dir = Path(storage_subdir)
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    file_saved_name: Optional[str] = None
+    file_saved_path: Optional[str] = None
+    file_size_mb: float = 0.0
+
+    if tz_file and tz_file.filename:
+        raw = await tz_file.read()
+        file_size_mb = len(raw) / (1024 * 1024)
+        if file_size_mb > 10:
+            return JSONResponse(
+                status_code=400,
+                content={"status": "error", "message": "Размер файла превышает 10 МБ"},
+            )
+        safe_name = f"{timestamp}_{tz_file.filename}"
+        file_path = upload_dir / safe_name
+        with open(file_path, "wb") as f:
+            f.write(raw)
+        file_saved_name = tz_file.filename
+        file_saved_path = str(file_path)
+
+    request_data: Dict[str, Any] = {
+        "timestamp": datetime.now().isoformat(),
+        "equipment_type": equipment_type,
+        "equipment_name": equipment_name,
+        "fullname": fullname_clean,
+        "contact": contact_clean,
+        "comment": comment_clean,
+        "file_name": file_saved_name,
+        "file_path": file_saved_path,
+        "file_size_mb": round(file_size_mb, 2) if file_saved_name else None,
+    }
+    if extra_data:
+        request_data.update(extra_data)
+
+    json_path = upload_dir / f"{json_filename_prefix}_{timestamp}.json"
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(request_data, f, ensure_ascii=False, indent=2)
+    logger.info(f"✅ Заявка ({equipment_type}) сохранена: {json_path}")
+
+    email_sent = False
+    email_error: Optional[str] = None
+
+    try:
+        from email_config import (
+            SEND_EMAIL,
+            SMTP_SERVER,
+            SMTP_PORT,
+            SENDER_EMAIL,
+            SENDER_PASSWORD,
+            RECEIVER_EMAIL,
+            CC_EMAILS,
+            EQUIPMENT_EMAIL_ROUTES,
+        )
+        from email.mime.base import MIMEBase
+        from email import encoders
+
+        if SEND_EMAIL:
+            route = EQUIPMENT_EMAIL_ROUTES.get(email_route_key) or EQUIPMENT_EMAIL_ROUTES.get(
+                equipment_type, {}
+            )
+            to_email = route.get("to", RECEIVER_EMAIL)
+            cc_emails = route.get("cc", CC_EMAILS)
+
+            msg = MIMEMultipart()
+            msg["From"] = SENDER_EMAIL
+            msg["To"] = to_email
+            if cc_emails:
+                msg["Cc"] = ", ".join(cc_emails)
+            msg["Subject"] = email_subject
+
+            extra_block = _format_request_extra_for_email(extra_data or {})
+            body = f"""
+Новая заявка: {equipment_name}
 
 ══════════════════════════════════════════
 👤 КОНТАКТНЫЕ ДАННЫЕ
 ══════════════════════════════════════════
-ФИО: {fullname}
-Контакт: {contact}
+ФИО: {fullname_clean}
+E-mail или телефон: {contact_clean}
 
-Комментарий: {comment if comment else 'Не указан'}
+Комментарий: {comment_clean if comment_clean else 'Не указан'}
+{extra_block}
+
+══════════════════════════════════════════
+📎 ТЕХНИЧЕСКОЕ ЗАДАНИЕ
+══════════════════════════════════════════
+{
+                f"Файл прикреплён: {file_saved_name} ({file_size_mb:.2f} МБ)"
+                if file_saved_name
+                else "Файл не приложён"
+            }
 
 ══════════════════════════════════════════
 ⏰ Время заявки: {datetime.now().strftime("%d.%m.%Y %H:%M:%S")}
@@ -2810,59 +3078,704 @@ async def submit_spu_request(request: Request):
 ---
 Сообщение сформировано автоматически системой подбора оборудования
 Турбулентность-Дон | www.turbo-don.ru
-                """
-                
-                msg.attach(MIMEText(body, 'plain', 'utf-8'))
-                
-                # Отправляем email
-                if SMTP_PORT == 465:
-                    with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
-                        server.login(SENDER_EMAIL, SENDER_PASSWORD)
-                        recipients = [RECIPIENT_EMAIL] + (CC_EMAILS if CC_EMAILS else [])
-                        server.send_message(msg, to_addrs=recipients)
-                else:
-                    with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-                        server.starttls()
-                        server.login(SENDER_EMAIL, SENDER_PASSWORD)
-                        recipients = [RECIPIENT_EMAIL] + (CC_EMAILS if CC_EMAILS else [])
-                        server.send_message(msg, to_addrs=recipients)
-                
-                email_sent = True
-                logger.info(f"✅ Email успешно отправлен на {RECIPIENT_EMAIL}")
+"""
+            msg.attach(MIMEText(body.strip(), "plain", "utf-8"))
+
+            if file_saved_path and file_saved_name:
+                import mimetypes
+
+                mime_type, _ = mimetypes.guess_type(file_saved_name)
+                if mime_type is None:
+                    mime_type = "application/octet-stream"
+                main_type, sub_type = mime_type.split("/", 1)
+                with open(file_saved_path, "rb") as attachment:
+                    part = MIMEBase(main_type, sub_type)
+                    part.set_payload(attachment.read())
+                    encoders.encode_base64(part)
+                    from email.utils import encode_rfc2231
+
+                    enc_fn = encode_rfc2231(file_saved_name, charset="utf-8")
+                    part.add_header(
+                        "Content-Disposition",
+                        "attachment",
+                        filename=enc_fn,
+                    )
+                    msg.attach(part)
+
+            recipients = [to_email] + (cc_emails if cc_emails else [])
+            if SMTP_PORT == 465:
+                with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
+                    server.login(SENDER_EMAIL, SENDER_PASSWORD)
+                    server.send_message(msg, to_addrs=recipients)
             else:
-                logger.info("⚠️ Отправка email отключена в конфигурации")
-                
-        except ImportError:
-            logger.warning("⚠️ Файл email_config.py не найден. Email не отправлен.")
-            email_error = "Конфигурация email не настроена"
-        except Exception as email_ex:
-            logger.error(f"❌ Ошибка отправки email: {str(email_ex)}")
-            email_error = str(email_ex)
-        
-        response_message = "Заявка успешно принята и сохранена"
-        if email_sent:
-            response_message += ". Email отправлен."
-        elif email_error:
-            response_message += f". Email не отправлен: {email_error}"
-        
+                with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+                    server.starttls()
+                    server.login(SENDER_EMAIL, SENDER_PASSWORD)
+                    server.send_message(msg, to_addrs=recipients)
+            email_sent = True
+            logger.info(f"✅ Email ({equipment_type}) отправлен на {to_email}")
+
+    except ImportError:
+        logger.warning("⚠️ email_config недоступен. Email не отправлен.")
+        email_error = "Конфигурация email не настроена"
+    except Exception as email_ex:
+        logger.error(f"❌ Ошибка отправки email ({equipment_type}): {email_ex}")
+        email_error = str(email_ex)
+
+    resp_msg = "Заявка успешно принята и сохранена"
+    if email_sent:
+        resp_msg += ". Email отправлен."
+    elif email_error:
+        resp_msg += f". Email не отправлен: {email_error}"
+
+    return JSONResponse(
+        status_code=200,
+        content={
+            "status": "success",
+            "message": resp_msg,
+            "request_id": timestamp,
+            "saved_json": str(json_path),
+            "email_sent": email_sent,
+        },
+    )
+
+
+def _build_spu_card(req: SpuCardRequest, request: Request) -> SpuCardResponse:
+    mt = req.meter_type
+    it = req.installation_type
+
+    if mt == "industrial" and it == "portable":
+        raise HTTPException(
+            status_code=422,
+            detail="Для промышленных счётчиков доступна только стационарная установка (СПУ-7).",
+        )
+
+    if mt == "domestic" and it == "portable":
+        fr = (req.flow_range or "").strip()
+        pl = (req.pressure_limit or "").strip()
+        acc = (req.accuracy or "").strip()
+        if fr not in _SPU3_FLOW:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Для СПУ-3 укажите flow_range из {_SPU3_FLOW}, плюс pressure_limit и accuracy.",
+            )
+        if not pl:
+            raise HTTPException(status_code=422, detail="Для СПУ-3 нужен pressure_limit (кПа, как на сайте).")
+        if acc not in {"0.3", "0.45"}:
+            raise HTTPException(status_code=422, detail="Для СПУ-3 accuracy должен быть 0.3 или 0.45.")
+        name = "СПУ-3 — Переносная поверочная установка"
+        img = "/static/images/spu3.png"
+        return SpuCardResponse(
+            name=name,
+            type="Переносная",
+            modification=None,
+            diameter=None,
+            counters="Бытовые",
+            flow_range=_spu_flow_range_display(fr),
+            accuracy=_spu_accuracy_display(acc),
+            image_path=img,
+            image_url=_spu_absolute_url(request, img),
+            equipment_key="spu3",
+        )
+
+    if mt == "domestic" and it == "stationary":
+        fr = (req.flow_range or "").strip()
+        posts = (req.posts or "").strip()
+        lines = (req.lines or "").strip()
+        if fr not in _SPU5_FLOW:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Для СПУ-5 укажите flow_range из {_SPU5_FLOW}, posts и lines.",
+            )
+        if posts not in _SPU5_POSTS or lines not in _SPU5_LINES:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Для СПУ-5 posts ∈ {_SPU5_POSTS}, lines ∈ {_SPU5_LINES}.",
+            )
+        name = "СПУ-5 — Стационарная поверочная установка"
+        img = "/static/images/spu5.png"
+        return SpuCardResponse(
+            name=name,
+            type="Стационарная",
+            modification=None,
+            diameter=None,
+            counters="Бытовые",
+            flow_range=_spu_flow_range_display(fr),
+            accuracy="±0,3%",
+            image_path=img,
+            image_url=_spu_absolute_url(request, img),
+            equipment_key="spu5",
+        )
+
+    if mt == "industrial" and it == "stationary":
+        mod = req.modification
+        diam = req.diameter
+        if mod not in ("nozzles", "masters"):
+            raise HTTPException(
+                status_code=422,
+                detail="Для СПУ-7 укажите modification: «nozzles» (сопла) или «masters» (мастер-счётчики).",
+            )
+        if diam is None:
+            raise HTTPException(status_code=422, detail="Для СПУ-7 укажите diameter (мм): целое число, как в списке на сайте.")
+        allowed = _SPU7_DIAM_NOZZLES if mod == "nozzles" else _SPU7_DIAM_MASTERS
+        if diam not in allowed:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Для СПУ-7 ({mod}) допустимые diameter (мм): {sorted(allowed)}.",
+            )
+        mod_name = "Сопла" if mod == "nozzles" else "Мастер-счётчики"
+        flow_txt = "0,016 — 1600 м³/ч" if mod == "nozzles" else "0,016 — 5000 м³/ч"
+        if mod == "nozzles":
+            acc = (req.accuracy or "").strip()
+            if acc not in _SPU7_ACCURACY_NOZZLES:
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Для СПУ-7 (сопла) укажите accuracy из {_SPU7_ACCURACY_NOZZLES}.",
+                )
+            acc_disp = _spu_accuracy_display(acc)
+        else:
+            acc_disp = "±0,33%"
+        name = "СПУ-7 — Стационарная поверочная установка"
+        img = "/static/images/spu7.png"
+        return SpuCardResponse(
+            name=name,
+            type="Стационарная",
+            modification=mod_name,
+            diameter=f"Ду{diam} мм",
+            counters="Бытовые и промышленные",
+            flow_range=flow_txt,
+            accuracy=acc_disp,
+            image_path=img,
+            image_url=_spu_absolute_url(request, img),
+            equipment_key="spu7",
+        )
+
+    raise HTTPException(
+        status_code=422,
+        detail="Недопустимая комбинация meter_type и installation_type.",
+    )
+
+
+@app.get("/api/spu/card", tags=["api"])
+async def api_spu_card_discovery():
+    """Подсказка для POST /api/spu/card (карточка СПУ для внешних проектов)."""
+    return {
+        "use_method": "POST",
+        "content_type": "application/json",
+        "path": "/api/spu/card",
+        "response_fields": [
+            "name",
+            "type",
+            "modification",
+            "diameter",
+            "counters",
+            "flow_range",
+            "accuracy",
+            "image_path",
+            "image_url",
+            "equipment_key",
+        ],
+        "examples": {
+            "spu7_masters_dn15": {
+                "meter_type": "industrial",
+                "installation_type": "stationary",
+                "modification": "masters",
+                "diameter": 15,
+            },
+            "spu7_nozzles": {
+                "meter_type": "industrial",
+                "installation_type": "stationary",
+                "modification": "nozzles",
+                "diameter": 50,
+                "accuracy": "0.3",
+            },
+            "spu5": {
+                "meter_type": "domestic",
+                "installation_type": "stationary",
+                "flow_range": "0.03-70",
+                "posts": "10",
+                "lines": "2",
+            },
+            "spu3": {
+                "meter_type": "domestic",
+                "installation_type": "portable",
+                "flow_range": "0.016-16",
+                "pressure_limit": "10",
+                "accuracy": "0.3",
+            },
+        },
+    }
+
+
+@app.post("/api/spu/card", response_model=SpuCardResponse, tags=["api"])
+async def api_spu_card(body: SpuCardRequest, request: Request):
+    """
+    По параметрам подбора СПУ (как на сайте) возвращает данные для карточки:
+    название, тип, модификация, диаметр, тип счётчиков, диапазон расходов, погрешность, пути к картинке.
+    """
+    return _build_spu_card(body, request)
+
+
+@app.post("/api/spu_card", response_model=SpuCardResponse, tags=["api"])
+async def api_spu_card_alias(body: SpuCardRequest, request: Request):
+    """Алиас POST /api/spu/card."""
+    return _build_spu_card(body, request)
+
+
+def _spu_specifications_from_card(
+    card: SpuCardResponse,
+    selection: Optional[SpuCardRequest] = None,
+) -> Dict[str, str]:
+    """Характеристики для заявки — в том же виде, что на сайте в spuSubmitRequest."""
+    specs: Dict[str, str] = {
+        "Тип": card.type,
+        "Счётчики": card.counters,
+        "Диапазон расходов": card.flow_range,
+        "Погрешность": card.accuracy,
+    }
+    if card.modification:
+        specs["Модификация"] = card.modification
+    if card.diameter:
+        specs["Диаметр"] = card.diameter
+    if selection:
+        if selection.pressure_limit:
+            specs["Предел давления"] = f"{selection.pressure_limit} кПа"
+        if selection.posts:
+            specs["Количество постов"] = selection.posts
+        if selection.lines:
+            specs["Линий подключения"] = selection.lines
+    return specs
+
+
+async def _submit_spu_application(
+    *,
+    fullname: str,
+    contact: str,
+    comment: str,
+    equipment_name: str,
+    specifications: Dict[str, str],
+    equipment_key: Optional[str] = None,
+    source: Optional[str] = None,
+    selection: Optional[Dict[str, Any]] = None,
+) -> JSONResponse:
+    fullname_clean = fullname.strip()
+    contact_clean = contact.strip()
+    comment_clean = (comment or "").strip()
+    if not fullname_clean or not contact_clean:
         return JSONResponse(
-            status_code=200,
+            status_code=400,
             content={
-                "status": "success",
-                "message": response_message,
-                "request_id": timestamp,
-                "email_sent": email_sent
+                "status": "error",
+                "message": "Укажите ФИО и контакт (email или телефон).",
+            },
+        )
+    if not equipment_name.strip():
+        return JSONResponse(
+            status_code=400,
+            content={"status": "error", "message": "Не указано название установки."},
+        )
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    upload_dir = Path("received_data/spu_requests")
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    request_data: Dict[str, Any] = {
+        "timestamp": datetime.now().isoformat(),
+        "equipment_type": "spu",
+        "equipment_name": equipment_name.strip(),
+        "equipment_key": equipment_key,
+        "specifications": specifications,
+        "fullname": fullname_clean,
+        "contact": contact_clean,
+        "comment": comment_clean,
+    }
+    if source:
+        request_data["source"] = source.strip()
+    if selection is not None:
+        request_data["selection"] = selection
+
+    json_file = upload_dir / f"spu_request_{timestamp}.json"
+    with open(json_file, "w", encoding="utf-8") as f:
+        json.dump(request_data, f, ensure_ascii=False, indent=2)
+    logger.info(f"✅ Заявка СПУ сохранена: {json_file}")
+
+    email_sent = False
+    email_error: Optional[str] = None
+
+    try:
+        from email_config import (
+            SEND_EMAIL,
+            SMTP_SERVER,
+            SMTP_PORT,
+            SENDER_EMAIL,
+            SENDER_PASSWORD,
+            RECEIVER_EMAIL,
+            CC_EMAILS,
+            EQUIPMENT_EMAIL_ROUTES,
+        )
+
+        if SEND_EMAIL:
+            route = EQUIPMENT_EMAIL_ROUTES.get("spu") or EQUIPMENT_EMAIL_ROUTES.get(
+                "verification", {}
+            )
+            to_email = route.get("to", RECEIVER_EMAIL)
+            cc_emails = route.get("cc", CC_EMAILS)
+
+            msg = MIMEMultipart()
+            msg["From"] = SENDER_EMAIL
+            msg["To"] = to_email
+            if cc_emails:
+                msg["Cc"] = ", ".join(cc_emails)
+            msg["Subject"] = f"🔧 Заявка на поверочную установку СПУ от {fullname_clean}"
+
+            specs_text = "\n".join(
+                f"  • {k}: {v}" for k, v in specifications.items()
+            )
+            source_line = f"\nИсточник: {source}" if source else ""
+            body = f"""
+Новая заявка на поверочную установку СПУ!
+
+══════════════════════════════════════════
+📋 ДАННЫЕ УСТАНОВКИ
+══════════════════════════════════════════
+Название: {equipment_name.strip()}
+{source_line}
+
+Характеристики:
+{specs_text}
+
+══════════════════════════════════════════
+👤 КОНТАКТНЫЕ ДАННЫЕ
+══════════════════════════════════════════
+ФИО: {fullname_clean}
+Контакт: {contact_clean}
+
+Комментарий: {comment_clean if comment_clean else 'Не указан'}
+
+══════════════════════════════════════════
+⏰ Время заявки: {datetime.now().strftime("%d.%m.%Y %H:%M:%S")}
+══════════════════════════════════════════
+
+---
+Сообщение сформировано автоматически системой подбора оборудования
+Турбулентность-Дон | www.turbo-don.ru
+"""
+            msg.attach(MIMEText(body.strip(), "plain", "utf-8"))
+
+            recipients = [to_email] + (cc_emails if cc_emails else [])
+            if SMTP_PORT == 465:
+                with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
+                    server.login(SENDER_EMAIL, SENDER_PASSWORD)
+                    server.send_message(msg, to_addrs=recipients)
+            else:
+                with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+                    server.starttls()
+                    server.login(SENDER_EMAIL, SENDER_PASSWORD)
+                    server.send_message(msg, to_addrs=recipients)
+            email_sent = True
+            logger.info(f"✅ Email (СПУ) отправлен на {to_email}")
+
+    except ImportError:
+        logger.warning("⚠️ email_config недоступен. Email не отправлен.")
+        email_error = "Конфигурация email не настроена"
+    except Exception as email_ex:
+        logger.error(f"❌ Ошибка отправки email (СПУ): {email_ex}")
+        email_error = str(email_ex)
+
+    response_message = "Заявка успешно принята и сохранена"
+    if email_sent:
+        response_message += ". Email отправлен."
+    elif email_error:
+        response_message += f". Email не отправлен: {email_error}"
+
+    return JSONResponse(
+        status_code=200,
+        content={
+            "status": "success",
+            "message": response_message,
+            "request_id": timestamp,
+            "saved_json": str(json_file),
+            "equipment_name": equipment_name.strip(),
+            "equipment_key": equipment_key,
+            "email_sent": email_sent,
+        },
+    )
+
+
+async def _handle_spu_application_body(
+    body: SpuApplicationRequestJson,
+    request: Request,
+) -> JSONResponse:
+    selection_dump: Optional[Dict[str, Any]] = None
+    if body.selection is not None:
+        card = _build_spu_card(body.selection, request)
+        equipment_name = card.name
+        specifications = _spu_specifications_from_card(card, body.selection)
+        equipment_key = card.equipment_key
+        selection_dump = body.selection.model_dump(exclude_none=True)
+    else:
+        equipment_name = body.equipment_name or ""
+        specifications = dict(body.specifications or {})
+        equipment_key = body.equipment_key
+
+    logger.info(
+        f"📋 Заявка на СПУ от {body.fullname.strip()} ({body.contact.strip()}), "
+        f"установка: {equipment_name}"
+    )
+    return await _submit_spu_application(
+        fullname=body.fullname,
+        contact=body.contact,
+        comment=body.comment,
+        equipment_name=equipment_name,
+        specifications=specifications,
+        equipment_key=equipment_key,
+        source=body.source,
+        selection=selection_dump,
+    )
+
+
+@app.get("/api/submit-spu-application", tags=["api"])
+async def api_submit_spu_application_discovery():
+    """Подсказка для POST: заявка на подбор поверочных установок СПУ."""
+    return {
+        "status": "ok",
+        "message": "Отправьте POST application/json. Сначала можно подобрать карточку: POST /api/spu/card",
+        "path": "/api/submit-spu-application",
+        "alias_post": "/api/submit-spu-request",
+        "storage_dir": "received_data/spu_requests/",
+        "required_fields": ["fullname", "contact"],
+        "payload_modes": {
+            "selection": "параметры подбора (как POST /api/spu/card) — сервер сам соберёт название и характеристики",
+            "manual": "equipment_name + specifications (как отправляет сайт после подбора)",
+        },
+        "example_with_selection": {
+            "fullname": "Иванов Иван Иванович",
+            "contact": "+7 (999) 123-45-67",
+            "comment": "Нужен расчёт и КП",
+            "source": "external-bot",
+            "selection": {
+                "meter_type": "industrial",
+                "installation_type": "stationary",
+                "modification": "nozzles",
+                "diameter": 15,
+                "accuracy": "0.2",
+            },
+        },
+        "example_manual": {
+            "fullname": "Иванов Иван Иванович",
+            "contact": "buyer@example.com",
+            "equipment_name": "СПУ-7 — Стационарная поверочная установка",
+            "equipment_key": "spu7",
+            "specifications": {
+                "Тип": "Стационарная",
+                "Счётчики": "Бытовые и промышленные",
+                "Модификация": "Сопла",
+                "Диапазон расходов": "0,016 — 1600 м³/ч",
+                "Диаметр": "Ду15 мм",
+                "Погрешность": "±0,2%",
+            },
+        },
+        "spu_card_examples": "/api/spu/card (GET — подсказка по полям подбора)",
+    }
+
+
+@app.post("/api/submit-spu-application", tags=["api"])
+async def submit_spu_application(body: SpuApplicationRequestJson, request: Request):
+    """
+    Заявка на поверочную установку СПУ для внешних проектов.
+    Передайте `selection` (подбор) или готовые `equipment_name` + `specifications` (как на сайте).
+    """
+    try:
+        return await _handle_spu_application_body(body, request)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Ошибка submit-spu-application: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"status": "error", "message": f"Ошибка сервера: {str(e)}"},
+        )
+
+
+@app.post("/api/submit-spu-request", tags=["api"])
+async def submit_spu_request(request: Request):
+    """Заявка на СПУ с сайта (JSON). Алиас по смыслу — POST /api/submit-spu-application."""
+    try:
+        data = await request.json()
+        body = SpuApplicationRequestJson.model_validate(
+            {
+                "fullname": data.get("fullname", ""),
+                "contact": data.get("contact", ""),
+                "comment": data.get("comment", ""),
+                "source": data.get("source"),
+                "equipment_name": data.get("equipment_name"),
+                "specifications": data.get("specifications"),
+                "equipment_key": data.get("equipment_key"),
+                "selection": data.get("selection"),
             }
         )
-        
+        return await _handle_spu_application_body(body, request)
+    except ValidationError as ve:
+        return JSONResponse(
+            status_code=422,
+            content={"status": "error", "message": "Ошибка валидации JSON", "details": ve.errors()},
+        )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Ошибка при обработке заявки на СПУ: {str(e)}")
         return JSONResponse(
             status_code=500,
-            content={
-                "status": "error",
-                "message": f"Ошибка сервера: {str(e)}"
-            }
+            content={"status": "error", "message": f"Ошибка сервера: {str(e)}"},
+        )
+
+
+@app.post("/api/submit-verification-liquid-request")
+async def submit_verification_liquid_request(
+    fullname: str = Form(...),
+    contact: str = Form(...),
+    comment: str = Form(""),
+    tz_file: Optional[UploadFile] = File(None),
+):
+    """Заявка на поверочные установки (жидкость): ПУРС и др. Шлёт файл ТЗ почтой опционально."""
+    try:
+        logger.info(f"📋 Получена заявка (поверка, жидкость) от {fullname.strip()} ({contact.strip()})")
+        return await _submit_simple_contact_request(
+            equipment_type="verification-liquid",
+            equipment_name="Установка поверочная водопроливная ПУРС (заявка, жидкость)",
+            storage_subdir="received_data/verification_liquid_requests",
+            json_filename_prefix="verification_liquid",
+            email_subject=f"💧 Заявка: поверочные установки (жидкость) от {fullname.strip()}",
+            email_route_key="verification-liquid",
+            fullname=fullname,
+            contact=contact,
+            comment=comment,
+            tz_file=tz_file,
+        )
+    except Exception as e:
+        logger.error(f"Ошибка submit-verification-liquid-request: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"status": "error", "message": f"Ошибка сервера: {str(e)}"},
+        )
+
+
+@app.get("/api/submit-household-gas-request", tags=["api"])
+async def api_submit_household_gas_discovery():
+    """Подсказка для POST: заявка на бытовые счётчики газа (СГ Гранд) с другого проекта."""
+    return {
+        "status": "ok",
+        "message": "Отправьте POST multipart/form-data или application/json.",
+        "path": "/api/submit-household-gas-request",
+        "alias_post": "/api/submit-household-request",
+        "storage_dir": "received_data/household_gas_requests/",
+        "multipart_fields": {
+            "fullname": "обязательно",
+            "contact": "обязательно — email или телефон",
+            "comment": "необязательно",
+            "tz_file": "необязательно, до 10 МБ (pdf, doc, docx, txt, zip, rar)",
+            "organization": "необязательно",
+            "position": "необязательно",
+            "phone": "необязательно",
+            "email": "необязательно",
+            "selected_items": "необязательно, JSON-строка: [{\"name\":\"...\",\"price\":1800,\"quantity\":1}]",
+            "source": "необязательно, метка внешней системы",
+        },
+        "json_example": {
+            "fullname": "Иванов Иван Иванович",
+            "contact": "+7 (999) 123-45-67",
+            "comment": "Нужна поставка 10 шт.",
+            "selected_items": [
+                {"name": 'Счётчик газа Гранд 1.6 1/2" РОССИЯ', "price": 1800, "quantity": 10}
+            ],
+            "source": "external-bot",
+        },
+    }
+
+
+@app.post("/api/submit-household-gas-request", tags=["api"])
+@app.post("/api/submit-household-request", tags=["api"], include_in_schema=False)
+async def submit_household_gas_request(request: Request):
+    """
+    Заявка на бытовые счётчики газа (как модалка на главной странице).
+    multipart/form-data — с опциональным файлом ТЗ; application/json — без файла.
+    """
+    try:
+        content_type = (request.headers.get("content-type") or "").lower()
+        extra: Dict[str, Any] = {}
+        tz_file: Optional[UploadFile] = None
+
+        if "application/json" in content_type:
+            raw = await request.json()
+            body = HouseholdGasMeterRequestJson.model_validate(raw)
+            fullname = body.fullname
+            contact = body.contact
+            comment = body.comment
+            if body.organization:
+                extra["organization"] = body.organization
+            if body.position:
+                extra["position"] = body.position
+            if body.phone:
+                extra["phone"] = body.phone
+            if body.email:
+                extra["email"] = body.email
+            if body.source:
+                extra["source"] = body.source
+            if body.selected_items:
+                extra["selected_items"] = [i.model_dump() for i in body.selected_items]
+        else:
+            form = await request.form()
+            fullname = str(form.get("fullname") or "")
+            contact = str(form.get("contact") or "")
+            comment = str(form.get("comment") or "")
+            for key in ("organization", "position", "phone", "email", "source"):
+                val = form.get(key)
+                if val is not None and str(val).strip():
+                    extra[key] = str(val).strip()
+            raw_items = form.get("selected_items")
+            if raw_items is not None and str(raw_items).strip():
+                try:
+                    parsed = json.loads(str(raw_items))
+                    if isinstance(parsed, list):
+                        extra["selected_items"] = parsed
+                except json.JSONDecodeError:
+                    return JSONResponse(
+                        status_code=400,
+                        content={
+                            "status": "error",
+                            "message": "Поле selected_items должно быть JSON-массивом.",
+                        },
+                    )
+            raw_file = form.get("tz_file")
+            if isinstance(raw_file, UploadFile) and raw_file.filename:
+                tz_file = raw_file
+
+        logger.info(
+            f"📋 Заявка (бытовые счётчики газа) от {fullname.strip()} ({contact.strip()})"
+        )
+        return await _submit_simple_contact_request(
+            equipment_type="household-gas",
+            equipment_name="Бытовые счётчики газа (СГ Гранд)",
+            storage_subdir="received_data/household_gas_requests",
+            json_filename_prefix="household_gas",
+            email_subject=f"🏠 Заявка: бытовые счётчики газа от {fullname.strip()}",
+            email_route_key="household",
+            fullname=fullname,
+            contact=contact,
+            comment=comment,
+            tz_file=tz_file,
+            extra_data=extra or None,
+        )
+    except ValidationError as ve:
+        return JSONResponse(
+            status_code=422,
+            content={"status": "error", "message": "Ошибка валидации JSON", "details": ve.errors()},
+        )
+    except Exception as e:
+        logger.error(f"Ошибка submit-household-gas-request: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"status": "error", "message": f"Ошибка сервера: {str(e)}"},
         )
 
 
@@ -3506,6 +4419,29 @@ def _equipment_params_from_1c_data(data: Dict[str, Any]) -> EquipmentParams:
     return EquipmentParams.model_validate(payload)
 
 
+def _equipment_static_image_url(raw_image: Optional[Any]) -> Optional[str]:
+    """
+    Относительный URL для <img src>: /static/<путь из data.json>.
+    Если положить такую же структуру static/ в другой проект и раздавать /static — картинка откроется с домена этого фронта.
+
+    Пример data.json «equipment/Turbo_Flow_CFM.png» → «/static/equipment/Turbo_Flow_CFM.png» (файл: static/equipment/...).
+
+    Если в JSON уже полный http(s)-URL — возвращается без изменений.
+    """
+    if raw_image is None:
+        return None
+    s = str(raw_image).strip()
+    if not s:
+        return None
+    if s.startswith(("http://", "https://")):
+        return s
+    p = s.replace("\\", "/").lstrip("/")
+    segments = [quote(part, safe="") for part in p.split("/") if part]
+    if not segments:
+        return None
+    return "/static/" + "/".join(segments)
+
+
 # Основной эндпоинт для принятия данных от 1С
 @app.post("/api/1c/data", response_model=APIResponse)
 async def receive_1c_data(
@@ -3532,6 +4468,10 @@ async def receive_1c_data(
                 row["recommended_diameter"] = get_recommended_diameter_for_equipment(
                     eq, search_params
                 )
+                img = _equipment_static_image_url(row.get("image"))
+                if img:
+                    row["image_url"] = img
+                    row["image_path"] = img
                 equipment.append(row)
             total_count = len(equipment)
         else:

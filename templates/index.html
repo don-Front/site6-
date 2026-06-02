@@ -6315,16 +6315,21 @@
         
         const ufgfcDnLevels = [50, 80, 100];
         
-        function getUfgfcBeams(dn, accuracy) {
-            const needHighAccuracy = accuracy < 1;
-            const dnData = ufgfcPriceTable[dn];
+        function parseAccuracyPercent(accuracy, fallback = 1) {
+            const n = parseFloat(String(accuracy ?? '').replace(',', '.'));
+            return Number.isFinite(n) && n > 0 ? n : fallback;
+        }
+
+        function getBeamsByAccuracy(dnData, accuracy) {
             if (!dnData) return null;
-            
-            if (!needHighAccuracy) {
-                return dnData[2] ? 2 : 4;
-            } else {
-                return dnData[4] ? 4 : 2;
-            }
+            const keys = Object.keys(dnData).map(Number).filter(Number.isFinite).sort((a, b) => a - b);
+            if (!keys.length) return null;
+            const acc = parseAccuracyPercent(accuracy);
+            return acc < 1 ? keys[keys.length - 1] : keys[0];
+        }
+
+        function getUfgfcBeams(dn, accuracy) {
+            return getBeamsByAccuracy(ufgfcPriceTable[dn], accuracy);
         }
         
         function calculateUfgfcPrice(dn, accuracy) {
@@ -6396,22 +6401,7 @@
         const uflDnLevels = [50, 65, 80, 100, 125, 150, 200, 250, 300, 350, 400, 450, 500, 600, 700, 800];
         
         function getUflBeams(dn, accuracy) {
-            const needHighAccuracy = accuracy < 1;
-            const dnData = uflPriceTable[dn];
-            if (!dnData) return null;
-            
-            if (!needHighAccuracy) {
-                if (dnData[2]) return 2;
-                if (dnData[4]) return 4;
-                if (dnData[6]) return 6;
-                if (dnData[8]) return 8;
-            } else {
-                if (dnData[4]) return 4;
-                if (dnData[6]) return 6;
-                if (dnData[8]) return 8;
-                if (dnData[2]) return 2;
-            }
-            return null;
+            return getBeamsByAccuracy(uflPriceTable[dn], accuracy);
         }
         
         function calculateUflPrice(dn, pressure, accuracy) {
@@ -6628,31 +6618,9 @@
         // Доступные DN для UFG-F-V
         const ufgfvDnLevels = [50, 65, 80, 100, 125, 150, 200, 250, 300, 350, 400, 450, 500, 600, 700, 800];
         
-        // Функция определения количества лучей по точности и DN
+        // Точность >= 1% → минимальный ключ в прайсе; < 1% → максимальный
         function getUfgfvBeams(dn, accuracy) {
-            // accuracy >= 1% → 2 луча (если доступно)
-            // accuracy < 1% (0,5-1%) → 4/6/8 лучей
-            
-            const needHighAccuracy = accuracy < 1;
-            const dnData = ufgfvPriceTable[dn];
-            
-            if (!dnData) return null;
-            
-            if (!needHighAccuracy) {
-                // Точность 1-2% → предпочитаем 2 луча
-                if (dnData[2]) return 2;
-                if (dnData[4]) return 4;
-                if (dnData[6]) return 6;
-                if (dnData[8]) return 8;
-            } else {
-                // Точность 0,5-1% → предпочитаем 4+ луча
-                if (dnData[4]) return 4;
-                if (dnData[6]) return 6;
-                if (dnData[8]) return 8;
-                if (dnData[2]) return 2; // fallback
-            }
-            
-            return null;
+            return getBeamsByAccuracy(ufgfvPriceTable[dn], accuracy);
         }
         
         // Функция расчёта цены UFG-F-V
@@ -6696,7 +6664,10 @@
             }
             
             // Получаем цену
-            const price = ufgfvPriceTable[targetDn][beams][pressureColumn];
+            let price = ufgfvPriceTable[targetDn][beams][pressureColumn];
+            if (parseAccuracyPercent(accuracy) < 1 && price != null) {
+                price = Math.round(price * 1.2);
+            }
             
             return {
                 price: price,
@@ -9008,7 +8979,7 @@
                 const { dn, pressure, accuracy } = currentPriceParams;
                 
                 if (dn && pressure) {
-                    const acc = accuracy || 1; // По умолчанию 1% если не указано
+                    const acc = parseAccuracyPercent(accuracy);
                     const result = calculateUfgfvPrice(dn, pressure, acc);
                     
                     if (result.price) {
@@ -9069,7 +9040,7 @@
                 const { dn, pressure, accuracy } = currentPriceParams;
                 
                 if (dn && pressure) {
-                    const acc = accuracy || 1;
+                    const acc = parseAccuracyPercent(accuracy);
                     const result = calculateUflPrice(dn, pressure, acc);
                     
                     if (result.price) {
@@ -9089,7 +9060,7 @@
                 const { dn, accuracy } = currentPriceParams;
                 
                 if (dn) {
-                    const acc = accuracy || 1;
+                    const acc = parseAccuracyPercent(accuracy);
                     const result = calculateUfgfcPrice(dn, acc);
                     
                     if (result.price) {
@@ -9352,7 +9323,70 @@
         // Обработка отправки формы бытовых счётчиков
         document.getElementById('household-form')?.addEventListener('submit', async function(e) {
             e.preventDefault();
-            await submitEquipmentForm(this, 'household');
+            const form = this;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn ? submitBtn.textContent : '';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Отправка...';
+            }
+            try {
+                const response = await fetch('/api/submit-household-gas-request', {
+                    method: 'POST',
+                    body: new FormData(form)
+                });
+                const result = await response.json();
+                if (response.ok && result.status === 'success') {
+                    alert('✅ Заявка успешно отправлена!\n\nМы свяжемся с вами в ближайшее время.');
+                    closeModal('household');
+                    form.reset();
+                } else {
+                    alert('❌ Ошибка при отправке заявки:\n' + (result.message || 'Неизвестная ошибка'));
+                }
+            } catch (error) {
+                console.error('Ошибка household-gas:', error);
+                alert('❌ Произошла ошибка при отправке заявки.\nПожалуйста, попробуйте позже или свяжитесь с нами напрямую.');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                }
+            }
+        });
+
+        // Заявка на поверочные установки (жидкость), модалка ПУРС
+        document.getElementById('verification-liquid-form')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const form = this;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn ? submitBtn.textContent : '';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Отправка...';
+            }
+            try {
+                const formData = new FormData(form);
+                const response = await fetch('/api/submit-verification-liquid-request', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                if (response.ok && result.status === 'success') {
+                    alert('✅ Заявка успешно отправлена!\n\nМы свяжемся с вами в ближайшее время.');
+                    closeModal('verification-liquid');
+                    form.reset();
+                } else {
+                    alert('❌ Ошибка при отправке заявки:\n' + (result.message || 'Неизвестная ошибка'));
+                }
+            } catch (error) {
+                console.error('Ошибка verification-liquid:', error);
+                alert('❌ Произошла ошибка при отправке заявки.\nПожалуйста, попробуйте позже или свяжитесь с нами напрямую.');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                }
+            }
         });
         
         // Общая функция отправки формы

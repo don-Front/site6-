@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Literal, Optional, Tuple
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
-from price_estimate import parse_dn_hint
+from price_estimate import parse_dn_hint, _beams_by_accuracy, _normalize_accuracy
 from tkp_accessories_data import (
     UFG_TEMP_SENSORS as _TEMP_TAB,
     CFM_KMCH_STEEL,
@@ -250,8 +250,13 @@ def _calc_ufgfv_spool(dn: float, pressure: float) -> Tuple[Optional[int], str]:
     return (price if isinstance(price, int) else None), ""
 
 
-def _ufgfc_beams(accuracy: float) -> int:
-    return 4 if accuracy < 1 else 2
+def _ufgfc_beams(dn: float, accuracy: float) -> int:
+    target = _nearest_dn_key(UFGFC_SPOOL, dn)
+    beams = _beams_by_accuracy(UFGFC_SPOOL.get(target, {}), accuracy)
+    if beams is not None:
+        return beams
+    acc = _normalize_accuracy(accuracy)
+    return 4 if acc < 1 else 2
 
 
 def _calc_ufgfc_spool(dn: float, accuracy: float) -> Optional[int]:
@@ -264,7 +269,7 @@ def _calc_ufgfc_spool(dn: float, accuracy: float) -> Optional[int]:
                 break
     if target is None:
         return None
-    b = _ufgfc_beams(accuracy)
+    b = _ufgfc_beams(dn, accuracy)
     row = UFGFC_SPOOL.get(target, {})
     return row.get(b)
 
@@ -415,7 +420,7 @@ def accessories_ufg_fv_fc(
     if equip == "ufg-f-c":
         sp = _calc_ufgfc_spool(dn, accuracy)
         sp_desc = (
-            f"Катушка-имитатор UFG-F-C, Ду {_nearest_dn_key(UFGFC_SPOOL, dn)}, {_ufgfc_beams(accuracy)} луча"
+            f"Катушка-имитатор UFG-F-C, Ду {_nearest_dn_key(UFGFC_SPOOL, dn)}, {_ufgfc_beams(dn, accuracy)} луча"
             if sp
             else "Для поверки расходомера без демонтажа"
         )

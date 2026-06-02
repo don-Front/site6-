@@ -1386,11 +1386,21 @@
         
         const ufgfcDnLevels = [50, 80, 100];
         
-        function getUfgfcBeams(dn, accuracy) {
-            const needHighAccuracy = accuracy < 1;
-            const dnData = ufgfcPriceTable[dn];
+        function parseAccuracyPercent(accuracy, fallback = 1) {
+            const n = parseFloat(String(accuracy ?? '').replace(',', '.'));
+            return Number.isFinite(n) && n > 0 ? n : fallback;
+        }
+
+        function getBeamsByAccuracy(dnData, accuracy) {
             if (!dnData) return null;
-            return !needHighAccuracy ? (dnData[2] ? 2 : 4) : (dnData[4] ? 4 : 2);
+            const keys = Object.keys(dnData).map(Number).filter(Number.isFinite).sort((a, b) => a - b);
+            if (!keys.length) return null;
+            const acc = parseAccuracyPercent(accuracy);
+            return acc < 1 ? keys[keys.length - 1] : keys[0];
+        }
+
+        function getUfgfcBeams(dn, accuracy) {
+            return getBeamsByAccuracy(ufgfcPriceTable[dn], accuracy);
         }
         
         function calculateUfgfcPrice(dn, accuracy) {
@@ -1446,22 +1456,7 @@
         const uflDnLevels = [50, 65, 80, 100, 125, 150, 200, 250, 300, 350, 400, 450, 500, 600, 700, 800];
         
         function getUflBeams(dn, accuracy) {
-            const needHighAccuracy = accuracy < 1;
-            const dnData = uflPriceTable[dn];
-            if (!dnData) return null;
-            
-            if (!needHighAccuracy) {
-                if (dnData[2]) return 2;
-                if (dnData[4]) return 4;
-                if (dnData[6]) return 6;
-                if (dnData[8]) return 8;
-            } else {
-                if (dnData[4]) return 4;
-                if (dnData[6]) return 6;
-                if (dnData[8]) return 8;
-                if (dnData[2]) return 2;
-            }
-            return null;
+            return getBeamsByAccuracy(uflPriceTable[dn], accuracy);
         }
         
         function calculateUflPrice(dn, pressure, accuracy) {
@@ -1611,22 +1606,7 @@
         const ufgfvDnLevels = [50, 65, 80, 100, 125, 150, 200, 250, 300, 350, 400, 450, 500, 600, 700, 800];
         
         function getUfgfvBeams(dn, accuracy) {
-            const needHighAccuracy = accuracy < 1;
-            const dnData = ufgfvPriceTable[dn];
-            if (!dnData) return null;
-            
-            if (!needHighAccuracy) {
-                if (dnData[2]) return 2;
-                if (dnData[4]) return 4;
-                if (dnData[6]) return 6;
-                if (dnData[8]) return 8;
-            } else {
-                if (dnData[4]) return 4;
-                if (dnData[6]) return 6;
-                if (dnData[8]) return 8;
-                if (dnData[2]) return 2;
-            }
-            return null;
+            return getBeamsByAccuracy(ufgfvPriceTable[dn], accuracy);
         }
         
         function calculateUfgfvPrice(dn, pressure, accuracy) {
@@ -1663,7 +1643,10 @@
                 pressureColumn = ufgfvPressureLevels[ufgfvPressureLevels.length - 1];
             }
             
-            const price = ufgfvPriceTable[targetDn][beams][pressureColumn];
+            let price = ufgfvPriceTable[targetDn][beams][pressureColumn];
+            if (parseAccuracyPercent(accuracy) < 1 && price != null) {
+                price = Math.round(price * 1.2);
+            }
             return { price, dn: targetDn, beams, pressure: pressureColumn, accuracy: accuracy < 1 ? '0,5-1%' : '1-2%' };
         }
         
@@ -3635,10 +3618,10 @@
             else if (equipId.includes('ufg2') || equipId.includes('ufg-f-v')) {
                 const dn = searchParamsFromUrl.diameter;
                 const pressure = searchParamsFromUrl.pressure_max;
-                const accuracy = searchParamsFromUrl.accuracy || 1;
+                const accuracy = parseAccuracyPercent(searchParamsFromUrl.accuracy);
                 
                 if (dn && pressure) {
-                    const result = calculateUfgfvPrice(parseFloat(dn), parseFloat(pressure), parseFloat(accuracy));
+                    const result = calculateUfgfvPrice(parseFloat(dn), parseFloat(pressure), accuracy);
                     
                     if (result.price) {
                         priceData = {
@@ -3696,10 +3679,10 @@
             else if (equipId.includes('ufl')) {
                 const dn = searchParamsFromUrl.diameter;
                 const pressure = searchParamsFromUrl.pressure_max;
-                const accuracy = searchParamsFromUrl.accuracy || 1;
+                const accuracy = parseAccuracyPercent(searchParamsFromUrl.accuracy);
                 
                 if (dn && pressure) {
-                    const result = calculateUflPrice(parseFloat(dn), parseFloat(pressure), parseFloat(accuracy));
+                    const result = calculateUflPrice(parseFloat(dn), parseFloat(pressure), accuracy);
                     
                     if (result.price) {
                         priceData = {
@@ -3716,10 +3699,10 @@
             // Специальная обработка для UFG-F-C
             else if (equipId.includes('ufg-f-c') || equipId.includes('ufgfc')) {
                 const dn = searchParamsFromUrl.diameter;
-                const accuracy = searchParamsFromUrl.accuracy || 1;
+                const accuracy = parseAccuracyPercent(searchParamsFromUrl.accuracy);
                 
                 if (dn) {
-                    const result = calculateUfgfcPrice(parseFloat(dn), parseFloat(accuracy));
+                    const result = calculateUfgfcPrice(parseFloat(dn), accuracy);
                     
                     if (result.price) {
                         priceData = {

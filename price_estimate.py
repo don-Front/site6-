@@ -11,10 +11,11 @@ from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 _UFGFV_P = [1.6, 6.3, 10.0, 16.0, 25.0]
 _UFGFV_DN = [50, 65, 80, 100, 125, 150, 200, 250, 300, 350, 400, 450, 500, 600, 700, 800]
+_UFGFV_HIGH_ACCURACY_MULT = 1.2
 
 _UFGFV_TABLE: Dict[int, Dict[int, Dict[float, Optional[int]]]] = {
     50: {
-        2: {1.6: 997280, 6.3: 1310662, 10.0: 1323768, 16.0: 1515424, 25.0: 3050686},
+        2: {1.6: 998145, 6.3: 1310662, 10.0: 1323768, 16.0: 1515424, 25.0: 3050686},
         4: {1.6: 1411621, 6.3: 1686433, 10.0: 1825544, 16.0: 2217817, 25.0: 4307440},
     },
     65: {
@@ -31,37 +32,47 @@ _UFGFV_TABLE: Dict[int, Dict[int, Dict[float, Optional[int]]]] = {
     },
     125: {
         2: {1.6: 1226156, 6.3: 1363880, 10.0: 1451945, 16.0: 2034083, 25.0: 3275778},
-        4: {1.6: 1770024, 6.3: 2004974, 10.0: 2220914, 16.0: 3049210, 25.0: 4736100},
+        4: {1.6: 1770024, 6.3: 2004974, 10.0: 2220914, 16.0: 3049210, 25.0: 4689208},
     },
     150: {
         2: {1.6: 1266405, 6.3: 1377518, 10.0: 1466465, 16.0: 2054423, 25.0: 3308536},
-        4: {1.6: 1835027, 6.3: 2102066, 10.0: 2243123, 16.0: 3079702, 25.0: 5949615},
+        4: {1.6: 1835027, 6.3: 2102066, 10.0: 2243123, 16.0: 3079702, 25.0: 4736100},
     },
     200: {
-        2: {1.6: 1563036, 6.3: 1578666, 10.0: 1650862, 16.0: 2074968, 25.0: 3598331},
-        4: {1.6: 2051108, 6.3: 2483210, 10.0: 2769341, 16.0: 3240229, 25.0: 6069202},
+        2: {1.6: 1339013, 6.3: 1578666, 10.0: 1650862, 16.0: 2074968, 25.0: 3598331},
+        4: {1.6: 2151946, 6.3: 2272627, 10.0: 2379948, 16.0: 3104933, 25.0: 4794789},
     },
     250: {
-        4: {1.6: 2418999, 6.3: 2443189, 10.0: 2516774, 16.0: 3130163, 25.0: 5634314},
-        6: {1.6: 3596159, 6.3: 3632121, 10.0: 4083950, 16.0: 5514312, 25.0: 6069111},
+        4: {1.6: 2418999, 6.3: 2443189, 10.0: 2516774, 16.0: 3130163, 25.0: 4853479},
+        6: {1.6: 4866004, 6.3: 5016178, 10.0: 5330626, 16.0: 5514312, 25.0: 6009111},
     },
     300: {
-        4: {1.6: 3499858, 6.3: 3548596, 10.0: 3575344, 16.0: 3611097, 25.0: 3778584},
-        6: {1.6: 5107959, 6.3: 5362066, 10.0: 5944259, 16.0: 6003703, 25.0: 6154144},
+        4: {1.6: 3499858, 6.3: 3548596, 10.0: 3575344, 16.0: 3611097, 25.0: 4989965},
+        6: {1.6: 5107959, 6.3: 5362066, 10.0: 5944259, 16.0: 6003703, 25.0: 6069202},
     },
-    350: {6: {1.6: 5551799, 6.3: 5708830, 10.0: 6030204, 16.0: 6090507, 25.0: 6239085}},
+    350: {
+        6: {1.6: 5551799, 6.3: 5708830, 10.0: 6030204, 16.0: 6090507, 25.0: 6154144},
+    },
     400: {
-        4: {1.6: 4578266, 6.3: 4624049, 10.0: 4670289, 16.0: 4716992, 25.0: 5789358},
-        8: {1.6: 5995638, 6.3: 6055594, 10.0: 6116150, 16.0: 6177311, 25.0: 7611649},
+        4: {1.6: 4578266, 6.3: 4624049, 10.0: 4670289, 16.0: 4716992, 25.0: 5262937},
+        8: {1.6: 5995638, 6.3: 6055594, 10.0: 6116150, 16.0: 6177311, 25.0: 6239085},
     },
-    450: {8: {1.6: 6389267, 6.3: 6453160, 10.0: 6517691, 16.0: 6582868, 25.0: 8984212}},
+    450: {
+        8: {1.6: 6389267, 6.3: 6453160, 10.0: 6517691, 16.0: 6582868, 25.0: 7611649},
+    },
     500: {
-        4: {1.6: 4624049, 6.3: 4670289, 10.0: 4716992, 16.0: 4764162, 25.0: 7717693},
-        8: {1.6: 6782896, 6.3: 6850725, 10.0: 6919232, 16.0: 6988424, 25.0: 9158852},
+        4: {1.6: 4624049, 6.3: 4670289, 10.0: 4716992, 16.0: 4764162, 25.0: 5761712},
+        8: {1.6: 6782896, 6.3: 6850725, 10.0: 6919232, 16.0: 6988424, 25.0: 8984212},
     },
-    600: {8: {1.6: 7122041, 6.3: 7193263, 10.0: 7265194, 16.0: 8008566, 25.0: None}},
-    700: {8: {1.6: 7477143, 6.3: 7552923, 10.0: 8778471, 16.0: 9136742, 25.0: None}},
-    800: {8: {1.6: 7852050, 6.3: 7930571, 10.0: 9227725, 16.0: 11227472, 25.0: None}},
+    600: {
+        8: {1.6: 7122041, 6.3: 7193263, 10.0: 7265194, 16.0: 8008566, 25.0: 9158852},
+    },
+    700: {
+        8: {1.6: 7458143, 6.3: 7552925, 10.0: 8778471, 16.0: 10247434, 25.0: None},
+    },
+    800: {
+        8: {1.6: 7852050, 6.3: 7930571, 10.0: 9227725, 16.0: 11227472, 25.0: None},
+    },
 }
 
 _UFL_TABLE: Dict[int, Dict[int, Dict[float, Optional[int]]]] = {
@@ -144,54 +155,64 @@ def _pressure_column(levels: List[float], pressure: float, fallback_last: float)
     return col
 
 
-def _get_ufgfv_beams(dn: int, accuracy: float) -> Optional[int]:
-    need_hi = accuracy < 1
-    dn_data = _UFGFV_TABLE.get(dn)
-    if not dn_data:
+def _normalize_accuracy(accuracy: float) -> float:
+    try:
+        acc = float(accuracy)
+    except (TypeError, ValueError):
+        return 1.0
+    return acc if acc > 0 else 1.0
+
+
+def _beams_by_accuracy(row: Dict[int, Any], accuracy: float) -> Optional[int]:
+    """
+    Выбор числа лучей по ключам прайса для данного DN.
+    >= 1% → min(keys): DN200→2, DN300→4, DN500→4
+    < 1%  → max(keys): DN200→4, DN300→6, DN500→8
+    """
+    if not row:
         return None
-    if not need_hi:
-        if 2 in dn_data:
-            return 2
-        if 4 in dn_data:
-            return 4
-        if 6 in dn_data:
-            return 6
-        if 8 in dn_data:
-            return 8
-    else:
-        if 4 in dn_data:
-            return 4
-        if 6 in dn_data:
-            return 6
-        if 8 in dn_data:
-            return 8
-        if 2 in dn_data:
-            return 2
-    return None
+    keys = sorted(int(k) for k in row.keys())
+    if not keys:
+        return None
+    acc = _normalize_accuracy(accuracy)
+    return keys[-1] if acc < 1 else keys[0]
+
+
+def _get_ufgfv_beams(dn: int, accuracy: float) -> Optional[int]:
+    return _beams_by_accuracy(_UFGFV_TABLE.get(dn), accuracy)
 
 
 def calculate_ufgfv_price(dn: float, pressure: float, accuracy: float) -> Dict[str, Any]:
+    acc = _normalize_accuracy(accuracy)
     target_dn = _nearest_dn_ge(_UFGFV_TABLE, _UFGFV_DN, dn)
     if target_dn is None or target_dn not in _UFGFV_TABLE:
         return {"price": None, "dn": dn, "note": "DN не найден"}
-    beams = _get_ufgfv_beams(target_dn, accuracy)
+    beams = _get_ufgfv_beams(target_dn, acc)
     if beams is None:
         return {"price": None, "dn": target_dn, "note": "Конфигурация недоступна"}
     p_col = _pressure_column(_UFGFV_P, pressure, _UFGFV_P[-1])
     row = _UFGFV_TABLE[target_dn].get(beams, {})
     price = row.get(p_col)
+    base_price = None
+    high_accuracy_multiplier = None
+    if acc < 1 and price is not None:
+        base_price = price
+        high_accuracy_multiplier = _UFGFV_HIGH_ACCURACY_MULT
+        price = round(price * _UFGFV_HIGH_ACCURACY_MULT)
     return {
         "price": price,
+        "base_price": base_price,
+        "high_accuracy_multiplier": high_accuracy_multiplier,
         "dn": target_dn,
         "beams": beams,
         "pressure": p_col,
-        "accuracy_band": "0,5–1%" if accuracy < 1 else "1–2%",
+        "accuracy_band": "0,5–1%" if acc < 1 else "1–2%",
         "note": None if price else "Цена по запросу",
     }
 
 
 def _get_ufl_beams(dn: int, accuracy: float) -> Optional[int]:
-    return _get_ufgfv_beams(dn, accuracy)  # идентичная логика
+    return _beams_by_accuracy(_UFL_TABLE.get(dn), accuracy)
 
 
 def calculate_ufl_price(dn: float, pressure: float, accuracy: float) -> Dict[str, Any]:
@@ -223,13 +244,7 @@ _UFGFC_TBL: Dict[int, Dict[int, int]] = {
 
 
 def _get_ufgfc_beams(dn: int, accuracy: float) -> Optional[int]:
-    dn_data = _UFGFC_TBL.get(dn)
-    if not dn_data:
-        return None
-    need_hi = accuracy < 1
-    if not need_hi:
-        return 2 if 2 in dn_data else (4 if 4 in dn_data else None)
-    return 4 if 4 in dn_data else (2 if 2 in dn_data else None)
+    return _beams_by_accuracy(_UFGFC_TBL.get(dn), accuracy)
 
 
 def calculate_ufgfc_price(dn: float, accuracy: float) -> Dict[str, Any]:
@@ -519,9 +534,7 @@ def estimate_from_request(body: EstimatePriceRequest) -> EstimatePriceResponse:
 
     dn = parse_dn_hint(equip, body.dn)
     pm = body.pressure_max_mpa
-    acc = float(body.accuracy_percent)
-    if acc <= 0:
-        acc = 1.0
+    acc = _normalize_accuracy(body.accuracy_percent)
 
     detail: Dict[str, Any] = {"equipment_id_normalized": el}
 

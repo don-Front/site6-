@@ -56,6 +56,41 @@ class TkpPdfRequest(BaseModel):
     )
     phone: Optional[str] = None
     email: Optional[str] = None
+    dn: Optional[Union[str, int, float]] = Field(
+        None,
+        validation_alias=AliasChoices("dn", "diameter", "recommended_diameter"),
+        description="Диаметр условного прохода (Dn), мм",
+    )
+    temperature_max: Optional[Union[str, int, float]] = Field(
+        None,
+        validation_alias=AliasChoices(
+            "temperature_max",
+            "max_temperature",
+            "temperature_max_c",
+            "temperature",
+        ),
+        description="Максимальная температура, °C",
+    )
+    pressure_max_mpa: Optional[Union[str, int, float]] = Field(
+        None,
+        validation_alias=AliasChoices(
+            "pressure_max_mpa",
+            "pressure_max",
+            "max_pressure",
+            "pressure",
+        ),
+        description="Максимальное давление, МПа",
+    )
+    accuracy_percent: Optional[Union[str, int, float]] = Field(
+        None,
+        validation_alias=AliasChoices(
+            "accuracy_percent",
+            "accuracy",
+            "accuracy_class",
+            "accuracyClass",
+        ),
+        description="Класс точности (погрешность), %",
+    )
     accessories: List[Any] = Field(
         default_factory=list,
         description="Список строк ИЛИ объектов {name, desc?, price?}",
@@ -126,6 +161,34 @@ def _normalize_specs(raw: Any) -> List[Dict[str, str]]:
     if isinstance(raw, dict):
         return [{"label": str(k), "value": str(v)} for k, v in raw.items()]
     return []
+
+
+def _spec_exists(rows: List[Dict[str, str]], needles: List[str]) -> bool:
+    normalized = [
+        re.sub(r"\s+", " ", row.get("label", "").strip().lower())
+        for row in rows
+    ]
+    return any(any(needle in label for needle in needles) for label in normalized)
+
+
+def _append_spec_if_missing(
+    rows: List[Dict[str, str]],
+    label: str,
+    value: Optional[Union[str, int, float]],
+    needles: List[str],
+) -> None:
+    if value is None or value == "" or _spec_exists(rows, needles):
+        return
+    rows.append({"label": label, "value": str(value)})
+
+
+def _format_accuracy(value: Optional[Union[str, int, float]]) -> Optional[str]:
+    if value is None or value == "":
+        return None
+    s = str(value).strip()
+    if "%" in s or "±" in s:
+        return s
+    return f"± {s} %"
 
 
 def _format_price(p: Any) -> str:
@@ -407,6 +470,30 @@ def build_tkp_pdf_bytes(body: TkpPdfRequest) -> bytes:
         if equip_type_label:
             specs_rows.append({"label": "Тип прибора", "value": equip_type_label})
         specs_rows.append({"label": "Параметры", "value": "согласно названию прибора"})
+    _append_spec_if_missing(
+        specs_rows,
+        "Диаметр условного прохода (Dn), мм",
+        body.dn,
+        ["диаметр условного прохода", "dn"],
+    )
+    _append_spec_if_missing(
+        specs_rows,
+        "Максимальная температура, °C",
+        body.temperature_max,
+        ["максимальная температура", "температура"],
+    )
+    _append_spec_if_missing(
+        specs_rows,
+        "Максимальное давление, МПа",
+        body.pressure_max_mpa,
+        ["максимальное давление", "рабочее давление", "pраб", "давление"],
+    )
+    _append_spec_if_missing(
+        specs_rows,
+        "Класс точности (погрешность), %",
+        _format_accuracy(body.accuracy_percent),
+        ["класс точности", "погрешность", "accuracy"],
+    )
     y = section_title(y, "2. Технические характеристики")
     y = draw_specs_table(y, specs_rows)
 
@@ -501,6 +588,10 @@ def tkp_pdf_discovery() -> Dict[str, Any]:
             "price": 125000,
             "phone": "+7…",
             "email": "client@example.com",
+            "dn": 100,
+            "temperature_max": 80,
+            "pressure_max_mpa": 1.6,
+            "accuracy_percent": 1.0,
             "accessories": [
                 {"name": "Комплект монтажных частей", "desc": "КМЧ", "price": 4697},
                 "Кабель связи RS-485",
